@@ -1,34 +1,35 @@
--- ROWNN GUI ULTRA
+-- ROWNN GUI v2 - GREEN THEME
 local plr = game:GetService("Players").LocalPlayer
 local run = game:GetService("RunService")
-local ws = game:GetService("Workspace")
 
--- Create GUI
+-- GUI
 local gui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+gui.Name = "RownnGuiV2"
+
 local main = Instance.new("Frame", gui)
 main.Size = UDim2.new(0, 300, 0, 40)
 main.Position = UDim2.new(0.5, -150, 0, 10)
-main.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
-main.BorderColor3 = Color3.fromRGB(0, 255, 255)
+main.BackgroundColor3 = Color3.fromRGB(0, 100, 0) -- HIJAU
+main.BorderColor3 = Color3.fromRGB(0, 255, 0)
 main.Active = true
 main.Draggable = true
 
--- Title Bar
+-- Title
 local title = Instance.new("TextButton", main)
 title.Text = "ROWNN GUI ▼"
 title.Size = UDim2.new(1, 0, 0, 40)
-title.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-title.TextColor3 = Color3.fromRGB(0, 255, 255)
+title.BackgroundColor3 = Color3.fromRGB(0, 50, 0)
+title.TextColor3 = Color3.fromRGB(255, 50, 50) -- MERAH
 title.Font = Enum.Font.SciFi
 
--- Content (Initially hidden)
+-- Content
 local content = Instance.new("Frame", main)
 content.Size = UDim2.new(1, 0, 0, 400)
 content.Position = UDim2.new(0, 0, 0, 40)
-content.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+content.BackgroundColor3 = Color3.fromRGB(0, 70, 0)
 content.Visible = false
 
--- Toggle GUI visibility
+-- Toggle
 local expanded = false
 title.MouseButton1Click:Connect(function()
     expanded = not expanded
@@ -37,19 +38,21 @@ title.MouseButton1Click:Connect(function()
     title.Text = expanded and "ROWNN GUI ▲" or "ROWNN GUI ▼"
 end)
 
--- Create Tab Buttons
+-- Tabs
 local tabs = {"Fly", "Goto", "BringP", "BringPl", "Spam"}
 local tabFrames = {}
 
 for i, tabName in pairs(tabs) do
+    -- Tab Button
     local btn = Instance.new("TextButton", content)
     btn.Text = tabName
     btn.Size = UDim2.new(0.18, 0, 0, 30)
     btn.Position = UDim2.new(0.02 + (i-1)*0.2, 0, 0.02, 0)
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-    btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    btn.BackgroundColor3 = Color3.fromRGB(0, 80, 0)
+    btn.TextColor3 = Color3.fromRGB(255, 50, 50) -- MERAH
     btn.Font = Enum.Font.SciFi
     
+    -- Tab Content
     local frame = Instance.new("ScrollingFrame", content)
     frame.Size = UDim2.new(0.96, 0, 0, 350)
     frame.Position = UDim2.new(0.02, 0, 0.1, 0)
@@ -66,19 +69,19 @@ for i, tabName in pairs(tabs) do
     end)
 end
 
--- ========== FLY SYSTEM ==========
+-- ==================== FLY SYSTEM ====================
 local flyFrame = tabFrames["Fly"]
 local flyEnabled = false
 local flySpeed = 50
 local bv, bg
 
--- Fly Toggle
+-- Fly Button
 local flyBtn = Instance.new("TextButton", flyFrame)
 flyBtn.Text = "🚀 FLY: OFF"
 flyBtn.Size = UDim2.new(0.96, 0, 0, 40)
 flyBtn.Position = UDim2.new(0.02, 0, 0.02, 0)
-flyBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-flyBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
+flyBtn.BackgroundColor3 = Color3.fromRGB(0, 80, 0)
+flyBtn.TextColor3 = Color3.fromRGB(255, 50, 50) -- MERAH
 flyBtn.Font = Enum.Font.SciFi
 
 -- Speed
@@ -86,16 +89,9 @@ local speedBox = Instance.new("TextBox", flyFrame)
 speedBox.Text = "50"
 speedBox.Size = UDim2.new(0.96, 0, 0, 30)
 speedBox.Position = UDim2.new(0.02, 0, 0.15, 0)
-speedBox.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-speedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-
--- Info
-local info = Instance.new("TextLabel", flyFrame)
-info.Text = "PAKAI VIRTUAL JOYSTICK ROBLOX\n↑↓←→ untuk gerak"
-info.Size = UDim2.new(0.96, 0, 0, 60)
-info.Position = UDim2.new(0.02, 0, 0.25, 0)
-info.BackgroundTransparency = 1
-info.TextColor3 = Color3.fromRGB(0, 255, 255)
+speedBox.BackgroundColor3 = Color3.fromRGB(0, 60, 0)
+speedBox.TextColor3 = Color3.fromRGB(255, 50, 50) -- MERAH
+speedBox.PlaceholderText = "Speed"
 
 -- Fly Function
 local function updateFly()
@@ -122,28 +118,34 @@ local function updateFly()
         conn = run.Heartbeat:Connect(function()
             if not flyEnabled then conn:Disconnect() return end
             
-            local cam = ws.CurrentCamera
+            local cam = workspace.CurrentCamera
             local lv = cam.CFrame.LookVector
             local rv = cam.CFrame.RightVector
+            local uv = Vector3.new(0, 1, 0)
             
             local move = Vector3.new(0, 0, 0)
             
-            -- Virtual Joystick Controls
-            local vJoy = game:GetService("VirtualInputManager")
-            -- Note: Virtual joystick input detection would go here
+            -- Virtual Joystick Input (akan pakai input Roblox mobile)
+            -- Untuk sekarang pakai keyboard sebagai placeholder
+            local UIS = game:GetService("UserInputService")
             
-            -- Keyboard fallback for testing
-            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.W) then
+            if UIS:IsKeyDown(Enum.KeyCode.W) then
                 move = move + (lv * flySpeed)
             end
-            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.S) then
+            if UIS:IsKeyDown(Enum.KeyCode.S) then
                 move = move - (lv * flySpeed)
             end
-            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.A) then
+            if UIS:IsKeyDown(Enum.KeyCode.A) then
                 move = move - (rv * flySpeed)
             end
-            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.D) then
+            if UIS:IsKeyDown(Enum.KeyCode.D) then
                 move = move + (rv * flySpeed)
+            end
+            if UIS:IsKeyDown(Enum.KeyCode.Space) then
+                move = move + (uv * flySpeed)
+            end
+            if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then
+                move = move - (uv * flySpeed)
             end
             
             bv.Velocity = move
@@ -165,7 +167,7 @@ end
 flyBtn.MouseButton1Click:Connect(function()
     flyEnabled = not flyEnabled
     flyBtn.Text = flyEnabled and "🚀 FLY: ON" or "🚀 FLY: OFF"
-    flyBtn.TextColor3 = flyEnabled and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+    flyBtn.TextColor3 = flyEnabled and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(255, 50, 50)
     updateFly()
 end)
 
@@ -178,7 +180,7 @@ speedBox.FocusLost:Connect(function()
     end
 end)
 
--- ========== GOTO PLAYER ==========
+-- ==================== GOTO PLAYER ====================
 local gotoFrame = tabFrames["Goto"]
 local selectedPlayer = nil
 
@@ -186,23 +188,24 @@ local selectedPlayer = nil
 local gotoList = Instance.new("ScrollingFrame", gotoFrame)
 gotoList.Size = UDim2.new(0.96, 0, 0, 200)
 gotoList.Position = UDim2.new(0.02, 0, 0.02, 0)
-gotoList.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+gotoList.BackgroundColor3 = Color3.fromRGB(0, 40, 0)
 gotoList.CanvasSize = UDim2.new(0, 0, 0, 0)
 
--- Refresh
+-- Refresh Button
 local refreshBtn = Instance.new("TextButton", gotoFrame)
 refreshBtn.Text = "🔄 Refresh"
 refreshBtn.Size = UDim2.new(0.96, 0, 0, 40)
 refreshBtn.Position = UDim2.new(0.02, 0, 0.55, 0)
-refreshBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+refreshBtn.BackgroundColor3 = Color3.fromRGB(0, 80, 0)
+refreshBtn.TextColor3 = Color3.fromRGB(255, 50, 50) -- MERAH
 
--- Teleport
+-- Teleport Button
 local tpBtn = Instance.new("TextButton", gotoFrame)
 tpBtn.Text = "⚡ Teleport"
 tpBtn.Size = UDim2.new(0.96, 0, 0, 40)
 tpBtn.Position = UDim2.new(0.02, 0, 0.7, 0)
-tpBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-tpBtn.TextColor3 = Color3.fromRGB(255, 255, 0)
+tpBtn.BackgroundColor3 = Color3.fromRGB(0, 90, 0)
+tpBtn.TextColor3 = Color3.fromRGB(255, 50, 50) -- MERAH
 
 local function updateGotoList()
     gotoList:ClearAllChildren()
@@ -214,7 +217,8 @@ local function updateGotoList()
             btn.Text = p.Name
             btn.Size = UDim2.new(0.94, 0, 0, 30)
             btn.Position = UDim2.new(0.03, 0, 0, y)
-            btn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+            btn.BackgroundColor3 = Color3.fromRGB(0, 60, 0)
+            btn.TextColor3 = Color3.fromRGB(255, 50, 50) -- MERAH
             
             btn.MouseButton1Click:Connect(function()
                 selectedPlayer = p
@@ -239,7 +243,7 @@ end)
 
 updateGotoList()
 
--- ========== BRING PART ==========
+-- ==================== BRING PART ====================
 local bringPFrame = tabFrames["BringP"]
 local bringingParts = false
 
@@ -247,11 +251,13 @@ local bringBtn = Instance.new("TextButton", bringPFrame)
 bringBtn.Text = "🧲 Bring Parts: OFF"
 bringBtn.Size = UDim2.new(0.96, 0, 0, 40)
 bringBtn.Position = UDim2.new(0.02, 0, 0.02, 0)
-bringBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+bringBtn.BackgroundColor3 = Color3.fromRGB(0, 80, 0)
+bringBtn.TextColor3 = Color3.fromRGB(255, 50, 50) -- MERAH
 
 bringBtn.MouseButton1Click:Connect(function()
     bringingParts = not bringingParts
     bringBtn.Text = bringingParts and "🧲 Bring Parts: ON" or "🧲 Bring Parts: OFF"
+    bringBtn.TextColor3 = bringingParts and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(255, 50, 50)
     
     if bringingParts then
         spawn(function()
@@ -259,7 +265,7 @@ bringBtn.MouseButton1Click:Connect(function()
             local root = plr.Character:WaitForChild("HumanoidRootPart")
             
             while bringingParts do
-                local parts = ws:GetDescendants()
+                local parts = workspace:GetDescendants()
                 local count = 0
                 
                 for _, part in pairs(parts) do
@@ -281,7 +287,7 @@ bringBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- ========== BRING PLAYER ==========
+-- ==================== BRING PLAYER ====================
 local bringPlFrame = tabFrames["BringPl"]
 local bringingPlayer = false
 local targetPlayer = nil
@@ -289,7 +295,7 @@ local targetPlayer = nil
 local bringPlList = Instance.new("ScrollingFrame", bringPlFrame)
 bringPlList.Size = UDim2.new(0.96, 0, 0, 200)
 bringPlList.Position = UDim2.new(0.02, 0, 0.02, 0)
-bringPlList.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+bringPlList.BackgroundColor3 = Color3.fromRGB(0, 40, 0)
 bringPlList.CanvasSize = UDim2.new(0, 0, 0, 0)
 
 local function updateBringPlList()
@@ -302,7 +308,8 @@ local function updateBringPlList()
             btn.Text = p.Name
             btn.Size = UDim2.new(0.94, 0, 0, 30)
             btn.Position = UDim2.new(0.03, 0, 0, y)
-            btn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+            btn.BackgroundColor3 = Color3.fromRGB(0, 60, 0)
+            btn.TextColor3 = Color3.fromRGB(255, 50, 50) -- MERAH
             
             btn.MouseButton1Click:Connect(function()
                 targetPlayer = p
@@ -319,11 +326,13 @@ local bringPlBtn = Instance.new("TextButton", bringPlFrame)
 bringPlBtn.Text = "👥 Bring Player: OFF"
 bringPlBtn.Size = UDim2.new(0.96, 0, 0, 40)
 bringPlBtn.Position = UDim2.new(0.02, 0, 0.55, 0)
-bringPlBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+bringPlBtn.BackgroundColor3 = Color3.fromRGB(0, 80, 0)
+bringPlBtn.TextColor3 = Color3.fromRGB(255, 50, 50) -- MERAH
 
 bringPlBtn.MouseButton1Click:Connect(function()
     bringingPlayer = not bringingPlayer
     bringPlBtn.Text = bringingPlayer and "👥 Bring Player: ON" or "👥 Bring Player: OFF"
+    bringPlBtn.TextColor3 = bringingPlayer and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(255, 50, 50)
     
     if bringingPlayer then
         spawn(function()
@@ -344,44 +353,45 @@ end)
 
 updateBringPlList()
 
--- ========== SPAM REMOTE ==========
+-- ==================== SPAM REMOTE ====================
 local spamFrame = tabFrames["Spam"]
 local spamming = false
+local remoteToSpam = nil
 
 local scanBtn = Instance.new("TextButton", spamFrame)
 scanBtn.Text = "🔍 Scan Remotes"
 scanBtn.Size = UDim2.new(0.96, 0, 0, 40)
 scanBtn.Position = UDim2.new(0.02, 0, 0.02, 0)
-scanBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+scanBtn.BackgroundColor3 = Color3.fromRGB(0, 80, 0)
+scanBtn.TextColor3 = Color3.fromRGB(255, 50, 50) -- MERAH
 
 local status = Instance.new("TextLabel", spamFrame)
 status.Text = "Status: Not Ready"
 status.Size = UDim2.new(0.96, 0, 0, 30)
 status.Position = UDim2.new(0.02, 0, 0.15, 0)
 status.BackgroundTransparency = 1
-status.TextColor3 = Color3.fromRGB(255, 50, 50)
+status.TextColor3 = Color3.fromRGB(255, 50, 50) -- MERAH
 
 local startBtn = Instance.new("TextButton", spamFrame)
 startBtn.Text = "🔥 Start Spam"
 startBtn.Size = UDim2.new(0.96, 0, 0, 40)
 startBtn.Position = UDim2.new(0.02, 0, 0.3, 0)
-startBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-startBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
+startBtn.BackgroundColor3 = Color3.fromRGB(0, 80, 0)
+startBtn.TextColor3 = Color3.fromRGB(255, 50, 50) -- MERAH
 
 local stopBtn = Instance.new("TextButton", spamFrame)
 stopBtn.Text = "⏹️ Stop"
 stopBtn.Size = UDim2.new(0.96, 0, 0, 40)
 stopBtn.Position = UDim2.new(0.02, 0, 0.45, 0)
-stopBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-
-local remoteToSpam = nil
+stopBtn.BackgroundColor3 = Color3.fromRGB(0, 80, 0)
+stopBtn.TextColor3 = Color3.fromRGB(255, 50, 50) -- MERAH
 
 scanBtn.MouseButton1Click:Connect(function()
     for _, obj in pairs(game:GetDescendants()) do
-        if obj:IsA("RemoteEvent") then
+        if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
             remoteToSpam = obj
             status.Text = "Status: Ready (" .. obj.Name .. ")"
-            status.TextColor3 = Color3.fromRGB(50, 255, 50)
+            status.TextColor3 = Color3.fromRGB(255, 100, 100)
             return
         end
     end
@@ -394,7 +404,11 @@ startBtn.MouseButton1Click:Connect(function()
         spawn(function()
             while spamming do
                 pcall(function()
-                    remoteToSpam:FireServer()
+                    if remoteToSpam:IsA("RemoteEvent") then
+                        remoteToSpam:FireServer()
+                    elseif remoteToSpam:IsA("RemoteFunction") then
+                        remoteToSpam:InvokeServer()
+                    end
                 end)
                 wait()
             end
@@ -404,6 +418,7 @@ end)
 
 stopBtn.MouseButton1Click:Connect(function()
     spamming = false
+    status.Text = "Status: Stopped"
 end)
 
 -- Cleanup
@@ -415,4 +430,4 @@ game:GetService("Players").PlayerRemoving:Connect(function(p)
     end
 end)
 
-print("ROWNN GUI LOADED!")
+print("ROWNN GUI v2 LOADED! (Green Theme)")
