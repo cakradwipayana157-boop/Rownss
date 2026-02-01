@@ -1,1090 +1,418 @@
--- ROWNN GUI COMPLETE v2.0
--- ALL FEATURES: Fly Mobile, Goto Player, Bring Part, Bring Player, Spam Remote
--- By: zamxs | DARK-GPT Premium
+-- ROWNN GUI ULTRA
+local plr = game:GetService("Players").LocalPlayer
+local run = game:GetService("RunService")
+local ws = game:GetService("Workspace")
 
-local Player = game:GetService("Players").LocalPlayer
-local Mouse = Player:GetMouse()
-local CoreGui = game:GetService("CoreGui")
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+-- Create GUI
+local gui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 300, 0, 40)
+main.Position = UDim2.new(0.5, -150, 0, 10)
+main.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+main.BorderColor3 = Color3.fromRGB(0, 255, 255)
+main.Active = true
+main.Draggable = true
 
--- GUI UTAMA
-local RownnGui = Instance.new("ScreenGui")
-local MainFrame = Instance.new("Frame")
-local Title = Instance.new("TextLabel")
-local MinimizeBtn = Instance.new("TextButton")
-local TabButtons = Instance.new("Frame")
-local TabContents = Instance.new("Frame")
+-- Title Bar
+local title = Instance.new("TextButton", main)
+title.Text = "ROWNN GUI ▼"
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+title.TextColor3 = Color3.fromRGB(0, 255, 255)
+title.Font = Enum.Font.SciFi
 
--- PROPERTIES GUI
-RownnGui.Name = "RownnGui"
-RownnGui.Parent = CoreGui
-RownnGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+-- Content (Initially hidden)
+local content = Instance.new("Frame", main)
+content.Size = UDim2.new(1, 0, 0, 400)
+content.Position = UDim2.new(0, 0, 0, 40)
+content.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+content.Visible = false
 
-MainFrame.Name = "MainFrame"
-MainFrame.Parent = RownnGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
-MainFrame.BorderColor3 = Color3.fromRGB(0, 255, 255)
-MainFrame.BorderSizePixel = 2
-MainFrame.Position = UDim2.new(0.1, 0, 0.1, 0)
-MainFrame.Size = UDim2.new(0, 500, 0, 500)
-MainFrame.Active = true
-MainFrame.Draggable = true
-
-Title.Name = "Title"
-Title.Parent = MainFrame
-Title.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-Title.BackgroundTransparency = 0.5
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.Font = Enum.Font.SciFi
-Title.Text = "ROWNN GUI v2.0 - MOBILE EDITION"
-Title.TextColor3 = Color3.fromRGB(0, 255, 255)
-Title.TextSize = 18
-
--- MINIMIZE SYSTEM
-local minimized = false
-local originalSize = MainFrame.Size
-local minimizedSize = UDim2.new(0, 500, 0, 30)
-
-MinimizeBtn.Name = "MinimizeBtn"
-MinimizeBtn.Parent = MainFrame
-MinimizeBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
-MinimizeBtn.Position = UDim2.new(0.95, -25, 0, 5)
-MinimizeBtn.Size = UDim2.new(0, 20, 0, 20)
-MinimizeBtn.Font = Enum.Font.SciFi
-MinimizeBtn.Text = "_"
-MinimizeBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
-MinimizeBtn.TextSize = 18
-
-MinimizeBtn.MouseButton1Click:Connect(function()
-    minimized = not minimized
-    if minimized then
-        MainFrame.Size = minimizedSize
-        TabContents.Visible = false
-        TabButtons.Visible = false
-        MinimizeBtn.Text = "+"
-    else
-        MainFrame.Size = originalSize
-        TabContents.Visible = true
-        TabButtons.Visible = true
-        MinimizeBtn.Text = "_"
-    end
+-- Toggle GUI visibility
+local expanded = false
+title.MouseButton1Click:Connect(function()
+    expanded = not expanded
+    content.Visible = expanded
+    main.Size = expanded and UDim2.new(0, 300, 0, 440) or UDim2.new(0, 300, 0, 40)
+    title.Text = expanded and "ROWNN GUI ▲" or "ROWNN GUI ▼"
 end)
 
--- TAB SYSTEM
-TabButtons.Name = "TabButtons"
-TabButtons.Parent = MainFrame
-TabButtons.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
-TabButtons.BorderSizePixel = 0
-TabButtons.Position = UDim2.new(0, 0, 0, 30)
-TabButtons.Size = UDim2.new(0, 120, 0, 470)
+-- Create Tab Buttons
+local tabs = {"Fly", "Goto", "BringP", "BringPl", "Spam"}
+local tabFrames = {}
 
-TabContents.Name = "TabContents"
-TabContents.Parent = MainFrame
-TabContents.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-TabContents.BorderSizePixel = 0
-TabContents.Position = UDim2.new(0, 120, 0, 30)
-TabContents.Size = UDim2.new(0, 380, 0, 470)
-
--- TABS
-local Tabs = {
-    "Fly",
-    "Goto Player", 
-    "Bring Part",
-    "Bring Player",
-    "Spam Remote"
-}
-
--- CREATE ALL TAB FRAMES
-local FlyTab = Instance.new("ScrollingFrame")
-local GotoTab = Instance.new("ScrollingFrame")
-local BringPartTab = Instance.new("ScrollingFrame")
-local BringPlayerTab = Instance.new("ScrollingFrame")
-local SpamTab = Instance.new("ScrollingFrame")
-
--- GLOBAL VARIABLES
-local flyEnabled = false
-local flySpeed = 50
-local bodyVelocity
-local bodyGyro
-local flyConnection
-
-local bringingParts = false
-local bringingPlayers = false
-local selectedPlayer = nil
-local selectedTargetPlayer = nil
-local currentRemoteSpam = nil
-
-local joystickActive = false
-local joystickStartPos = Vector2.new(0, 0)
-local joystickCurrentPos = Vector2.new(0, 0)
-local joystickRadius = 50
-local altitudeUp = false
-local altitudeDown = false
-
--- ==================== FLY TAB (MOBILE VERSION) ====================
-FlyTab.Name = "FlyTab"
-FlyTab.Parent = TabContents
-FlyTab.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-FlyTab.BorderSizePixel = 0
-FlyTab.Size = UDim2.new(1, 0, 1, 0)
-FlyTab.ScrollBarThickness = 5
-FlyTab.ScrollingEnabled = true
-FlyTab.CanvasSize = UDim2.new(0, 0, 0, 600)
-FlyTab.Visible = true
-
--- TITLE
-local FlyTitle = Instance.new("TextLabel")
-FlyTitle.Parent = FlyTab
-FlyTitle.Text = "🚀 FLY SYSTEM (MOBILE)"
-FlyTitle.Font = Enum.Font.SciFi
-FlyTitle.TextColor3 = Color3.fromRGB(0, 255, 255)
-FlyTitle.TextSize = 18
-FlyTitle.BackgroundTransparency = 1
-FlyTitle.Position = UDim2.new(0.05, 0, 0.02, 0)
-FlyTitle.Size = UDim2.new(0.9, 0, 0, 30)
-
--- FLY TOGGLE
-local FlyToggle = Instance.new("TextButton")
-FlyToggle.Parent = FlyTab
-FlyToggle.Text = "🚀 FLY MODE: OFF"
-FlyToggle.Font = Enum.Font.SciFi
-FlyToggle.TextColor3 = Color3.fromRGB(255, 50, 50)
-FlyToggle.TextSize = 16
-FlyToggle.Position = UDim2.new(0.05, 0, 0.08, 0)
-FlyToggle.Size = UDim2.new(0.9, 0, 0, 40)
-FlyToggle.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-FlyToggle.BorderColor3 = Color3.fromRGB(0, 255, 255)
-
--- JOYSTICK CONTAINER
-local JoystickContainer = Instance.new("Frame")
-JoystickContainer.Parent = FlyTab
-JoystickContainer.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
-JoystickContainer.BorderColor3 = Color3.fromRGB(0, 255, 255)
-JoystickContainer.Position = UDim2.new(0.05, 0, 0.18, 0)
-JoystickContainer.Size = UDim2.new(0.9, 0, 0, 180)
-JoystickContainer.ClipsDescendants = true
-
-local JoystickBackground = Instance.new("Frame")
-JoystickBackground.Parent = JoystickContainer
-JoystickBackground.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-JoystickBackground.BorderSizePixel = 0
-JoystickBackground.Size = UDim2.new(1, 0, 1, 0)
-
-local JoystickKnob = Instance.new("Frame")
-JoystickKnob.Parent = JoystickBackground
-JoystickKnob.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
-JoystickKnob.BorderSizePixel = 0
-JoystickKnob.Size = UDim2.new(0.15, 0, 0.15, 0)
-JoystickKnob.Position = UDim2.new(0.425, 0, 0.425, 0)
-JoystickKnob.AnchorPoint = Vector2.new(0.5, 0.5)
-
--- JOYSTICK DIRECTIONS
-local directions = {"↑", "↓", "←", "→"}
-local directionPositions = {
-    UDim2.new(0.5, 0, 0.1, 0),
-    UDim2.new(0.5, 0, 0.9, 0),
-    UDim2.new(0.1, 0, 0.5, 0),
-    UDim2.new(0.9, 0, 0.5, 0)
-}
-
-for i = 1, 4 do
-    local arrow = Instance.new("TextLabel")
-    arrow.Parent = JoystickContainer
-    arrow.Text = directions[i]
-    arrow.Font = Enum.Font.SciFi
-    arrow.TextColor3 = Color3.fromRGB(0, 255, 255, 100)
-    arrow.TextSize = 24
-    arrow.BackgroundTransparency = 1
-    arrow.Size = UDim2.new(0.2, 0, 0.2, 0)
-    arrow.Position = directionPositions[i]
-    arrow.AnchorPoint = Vector2.new(0.5, 0.5)
+for i, tabName in pairs(tabs) do
+    local btn = Instance.new("TextButton", content)
+    btn.Text = tabName
+    btn.Size = UDim2.new(0.18, 0, 0, 30)
+    btn.Position = UDim2.new(0.02 + (i-1)*0.2, 0, 0.02, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+    btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    btn.Font = Enum.Font.SciFi
+    
+    local frame = Instance.new("ScrollingFrame", content)
+    frame.Size = UDim2.new(0.96, 0, 0, 350)
+    frame.Position = UDim2.new(0.02, 0, 0.1, 0)
+    frame.BackgroundTransparency = 1
+    frame.Visible = i == 1
+    frame.CanvasSize = UDim2.new(0, 0, 0, 500)
+    tabFrames[tabName] = frame
+    
+    btn.MouseButton1Click:Connect(function()
+        for _, f in pairs(tabFrames) do
+            f.Visible = false
+        end
+        frame.Visible = true
+    end)
 end
 
--- ALTITUDE CONTROLS
-local AltitudeFrame = Instance.new("Frame")
-AltitudeFrame.Parent = FlyTab
-AltitudeFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
-AltitudeFrame.BorderColor3 = Color3.fromRGB(0, 255, 255)
-AltitudeFrame.Position = UDim2.new(0.05, 0, 0.55, 0)
-AltitudeFrame.Size = UDim2.new(0.9, 0, 0, 80)
+-- ========== FLY SYSTEM ==========
+local flyFrame = tabFrames["Fly"]
+local flyEnabled = false
+local flySpeed = 50
+local bv, bg
 
-local UpButton = Instance.new("TextButton")
-UpButton.Parent = AltitudeFrame
-UpButton.Text = "⬆️ NAIK"
-UpButton.Font = Enum.Font.SciFi
-UpButton.TextColor3 = Color3.fromRGB(50, 255, 50)
-UpButton.TextSize = 16
-UpButton.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-UpButton.BorderColor3 = Color3.fromRGB(0, 255, 255)
-UpButton.Size = UDim2.new(0.9, 0, 0.4, 0)
-UpButton.Position = UDim2.new(0.05, 0, 0.05, 0)
+-- Fly Toggle
+local flyBtn = Instance.new("TextButton", flyFrame)
+flyBtn.Text = "🚀 FLY: OFF"
+flyBtn.Size = UDim2.new(0.96, 0, 0, 40)
+flyBtn.Position = UDim2.new(0.02, 0, 0.02, 0)
+flyBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+flyBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
+flyBtn.Font = Enum.Font.SciFi
 
-local DownButton = Instance.new("TextButton")
-DownButton.Parent = AltitudeFrame
-DownButton.Text = "⬇️ TURUN"
-DownButton.Font = Enum.Font.SciFi
-DownButton.TextColor3 = Color3.fromRGB(255, 50, 50)
-DownButton.TextSize = 16
-DownButton.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-DownButton.BorderColor3 = Color3.fromRGB(0, 255, 255)
-DownButton.Size = UDim2.new(0.9, 0, 0.4, 0)
-DownButton.Position = UDim2.new(0.05, 0, 0.55, 0)
+-- Speed
+local speedBox = Instance.new("TextBox", flyFrame)
+speedBox.Text = "50"
+speedBox.Size = UDim2.new(0.96, 0, 0, 30)
+speedBox.Position = UDim2.new(0.02, 0, 0.15, 0)
+speedBox.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+speedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 
--- SPEED CONTROL
-local SpeedLabel = Instance.new("TextLabel")
-SpeedLabel.Parent = FlyTab
-SpeedLabel.Text = "KE CEPATAN: 50"
-SpeedLabel.Font = Enum.Font.SciFi
-SpeedLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
-SpeedLabel.TextSize = 14
-SpeedLabel.BackgroundTransparency = 1
-SpeedLabel.Position = UDim2.new(0.05, 0, 0.75, 0)
-SpeedLabel.Size = UDim2.new(0.9, 0, 0, 20)
+-- Info
+local info = Instance.new("TextLabel", flyFrame)
+info.Text = "PAKAI VIRTUAL JOYSTICK ROBLOX\n↑↓←→ untuk gerak"
+info.Size = UDim2.new(0.96, 0, 0, 60)
+info.Position = UDim2.new(0.02, 0, 0.25, 0)
+info.BackgroundTransparency = 1
+info.TextColor3 = Color3.fromRGB(0, 255, 255)
 
-local SpeedBox = Instance.new("TextBox")
-SpeedBox.Parent = FlyTab
-SpeedBox.Text = "50"
-SpeedBox.Font = Enum.Font.SciFi
-SpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-SpeedBox.TextSize = 14
-SpeedBox.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-SpeedBox.BorderColor3 = Color3.fromRGB(0, 255, 255)
-SpeedBox.Position = UDim2.new(0.05, 0, 0.79, 0)
-SpeedBox.Size = UDim2.new(0.9, 0, 0, 35)
-SpeedBox.PlaceholderText = "Masukkan kecepatan (1-200)"
-
--- NO CLIP TOGGLE
-local NoClipToggle = Instance.new("TextButton")
-NoClipToggle.Parent = FlyTab
-NoClipToggle.Text = "🔓 NO CLIP: ON"
-NoClipToggle.Font = Enum.Font.SciFi
-NoClipToggle.TextColor3 = Color3.fromRGB(50, 255, 50)
-NoClipToggle.TextSize = 14
-NoClipToggle.Position = UDim2.new(0.05, 0, 0.88, 0)
-NoClipToggle.Size = UDim2.new(0.9, 0, 0, 40)
-NoClipToggle.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-NoClipToggle.BorderColor3 = Color3.fromRGB(0, 255, 255)
-
--- ==================== GOTO PLAYER TAB ====================
-GotoTab.Name = "GotoPlayerTab"
-GotoTab.Parent = TabContents
-GotoTab.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-GotoTab.BorderSizePixel = 0
-GotoTab.Size = UDim2.new(1, 0, 1, 0)
-GotoTab.ScrollBarThickness = 5
-GotoTab.CanvasSize = UDim2.new(0, 0, 0, 600)
-GotoTab.Visible = false
-
-local GotoTitle = Instance.new("TextLabel")
-GotoTitle.Parent = GotoTab
-GotoTitle.Text = "👥 TELEPORT KE PLAYER"
-GotoTitle.Font = Enum.Font.SciFi
-GotoTitle.TextColor3 = Color3.fromRGB(0, 255, 255)
-GotoTitle.TextSize = 18
-GotoTitle.BackgroundTransparency = 1
-GotoTitle.Position = UDim2.new(0.05, 0, 0.02, 0)
-GotoTitle.Size = UDim2.new(0.9, 0, 0, 30)
-
--- PLAYER LIST
-local PlayerListFrame = Instance.new("ScrollingFrame")
-PlayerListFrame.Parent = GotoTab
-PlayerListFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
-PlayerListFrame.BorderColor3 = Color3.fromRGB(0, 255, 255)
-PlayerListFrame.Position = UDim2.new(0.05, 0, 0.1, 0)
-PlayerListFrame.Size = UDim2.new(0.9, 0, 0, 250)
-PlayerListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-PlayerListFrame.ScrollBarThickness = 5
-
--- REFRESH BUTTON
-local RefreshBtn = Instance.new("TextButton")
-RefreshBtn.Parent = GotoTab
-RefreshBtn.Text = "🔄 REFRESH LIST"
-RefreshBtn.Font = Enum.Font.SciFi
-RefreshBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-RefreshBtn.TextSize = 14
-RefreshBtn.Position = UDim2.new(0.05, 0, 0.65, 0)
-RefreshBtn.Size = UDim2.new(0.9, 0, 0, 40)
-RefreshBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-RefreshBtn.BorderColor3 = Color3.fromRGB(0, 255, 255)
-
--- SELECTED PLAYER LABEL
-local SelectedLabel = Instance.new("TextLabel")
-SelectedLabel.Parent = GotoTab
-SelectedLabel.Text = "Dipilih: TIDAK ADA"
-SelectedLabel.Font = Enum.Font.SciFi
-SelectedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-SelectedLabel.TextSize = 14
-SelectedLabel.BackgroundTransparency = 1
-SelectedLabel.Position = UDim2.new(0.05, 0, 0.55, 0)
-SelectedLabel.Size = UDim2.new(0.9, 0, 0, 30)
-
--- GOTO BUTTON
-local GotoButton = Instance.new("TextButton")
-GotoButton.Parent = GotoTab
-GotoButton.Text = "⚡ TELEPORT KE PLAYER"
-GotoButton.Font = Enum.Font.SciFi
-GotoButton.TextColor3 = Color3.fromRGB(255, 255, 0)
-GotoButton.TextSize = 16
-GotoButton.Position = UDim2.new(0.05, 0, 0.75, 0)
-GotoButton.Size = UDim2.new(0.9, 0, 0, 45)
-GotoButton.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-GotoButton.BorderColor3 = Color3.fromRGB(255, 255, 0)
-
--- ==================== BRING PART TAB ====================
-BringPartTab.Name = "BringPartTab"
-BringPartTab.Parent = TabContents
-BringPartTab.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-BringPartTab.BorderSizePixel = 0
-BringPartTab.Size = UDim2.new(1, 0, 1, 0)
-BringPartTab.ScrollBarThickness = 5
-BringPartTab.CanvasSize = UDim2.new(0, 0, 0, 500)
-BringPartTab.Visible = false
-
-local BringPartTitle = Instance.new("TextLabel")
-BringPartTitle.Parent = BringPartTab
-BringPartTitle.Text = "🧱 TARIK SEMUA PART"
-BringPartTitle.Font = Enum.Font.SciFi
-BringPartTitle.TextColor3 = Color3.fromRGB(0, 255, 255)
-BringPartTitle.TextSize = 18
-BringPartTitle.BackgroundTransparency = 1
-BringPartTitle.Position = UDim2.new(0.05, 0, 0.02, 0)
-BringPartTitle.Size = UDim2.new(0.9, 0, 0, 30)
-
--- BRING TOGGLE
-local BringPartToggle = Instance.new("TextButton")
-BringPartToggle.Parent = BringPartTab
-BringPartToggle.Text = "🧲 MULAI TARIK PART: OFF"
-BringPartToggle.Font = Enum.Font.SciFi
-BringPartToggle.TextColor3 = Color3.fromRGB(255, 50, 50)
-BringPartToggle.TextSize = 16
-BringPartToggle.Position = UDim2.new(0.05, 0, 0.1, 0)
-BringPartToggle.Size = UDim2.new(0.9, 0, 0, 45)
-BringPartToggle.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-BringPartToggle.BorderColor3 = Color3.fromRGB(0, 255, 255)
-
--- UNLOCK LOCKED PARTS
-local UnlockToggle = Instance.new("TextButton")
-UnlockToggle.Parent = BringPartTab
-UnlockToggle.Text = "🔓 BUKA PART TERKUNCI: OFF"
-UnlockToggle.Font = Enum.Font.SciFi
-UnlockToggle.TextColor3 = Color3.fromRGB(255, 50, 50)
-UnlockToggle.TextSize = 14
-UnlockToggle.Position = UDim2.new(0.05, 0, 0.25, 0)
-UnlockToggle.Size = UDim2.new(0.9, 0, 0, 40)
-UnlockToggle.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-UnlockToggle.BorderColor3 = Color3.fromRGB(0, 255, 255)
-
--- RADIUS CONTROL
-local RadiusLabel = Instance.new("TextLabel")
-RadiusLabel.Parent = BringPartTab
-RadiusLabel.Text = "JARI-JARI LINGKARAN: 10"
-RadiusLabel.Font = Enum.Font.SciFi
-RadiusLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
-RadiusLabel.TextSize = 14
-RadiusLabel.BackgroundTransparency = 1
-RadiusLabel.Position = UDim2.new(0.05, 0, 0.4, 0)
-RadiusLabel.Size = UDim2.new(0.9, 0, 0, 20)
-
-local RadiusBox = Instance.new("TextBox")
-RadiusBox.Parent = BringPartTab
-RadiusBox.Text = "10"
-RadiusBox.Font = Enum.Font.SciFi
-RadiusBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-RadiusBox.TextSize = 14
-RadiusBox.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-RadiusBox.BorderColor3 = Color3.fromRGB(0, 255, 255)
-RadiusBox.Position = UDim2.new(0.05, 0, 0.45, 0)
-RadiusBox.Size = UDim2.new(0.9, 0, 0, 35)
-
--- PART COUNTER
-local PartCounterLabel = Instance.new("TextLabel")
-PartCounterLabel.Parent = BringPartTab
-PartCounterLabel.Text = "PART DITEMUKAN: 0"
-PartCounterLabel.Font = Enum.Font.SciFi
-PartCounterLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-PartCounterLabel.TextSize = 14
-PartCounterLabel.BackgroundTransparency = 1
-PartCounterLabel.Position = UDim2.new(0.05, 0, 0.6, 0)
-PartCounterLabel.Size = UDim2.new(0.9, 0, 0, 30)
-
--- ==================== BRING PLAYER TAB ====================
-BringPlayerTab.Name = "BringPlayerTab"
-BringPlayerTab.Parent = TabContents
-BringPlayerTab.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-BringPlayerTab.BorderSizePixel = 0
-BringPlayerTab.Size = UDim2.new(1, 0, 1, 0)
-BringPlayerTab.ScrollBarThickness = 5
-BringPlayerTab.CanvasSize = UDim2.new(0, 0, 0, 600)
-BringPlayerTab.Visible = false
-
-local BringPlayerTitle = Instance.new("TextLabel")
-BringPlayerTitle.Parent = BringPlayerTab
-BringPlayerTitle.Text = "👤 TARIK PLAYER"
-BringPlayerTitle.Font = Enum.Font.SciFi
-BringPlayerTitle.TextColor3 = Color3.fromRGB(0, 255, 255)
-BringPlayerTitle.TextSize = 18
-BringPlayerTitle.BackgroundTransparency = 1
-BringPlayerTitle.Position = UDim2.new(0.05, 0, 0.02, 0)
-BringPlayerTitle.Size = UDim2.new(0.9, 0, 0, 30)
-
--- PLAYER LIST FOR BRINGING
-local BringPlayerList = Instance.new("ScrollingFrame")
-BringPlayerList.Parent = BringPlayerTab
-BringPlayerList.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
-BringPlayerList.BorderColor3 = Color3.fromRGB(0, 255, 255)
-BringPlayerList.Position = UDim2.new(0.05, 0, 0.1, 0)
-BringPlayerList.Size = UDim2.new(0.9, 0, 0, 250)
-BringPlayerList.CanvasSize = UDim2.new(0, 0, 0, 0)
-BringPlayerList.ScrollBarThickness = 5
-
--- TARGET LABEL
-local TargetLabel = Instance.new("TextLabel")
-TargetLabel.Parent = BringPlayerTab
-TargetLabel.Text = "Target: TIDAK ADA"
-TargetLabel.Font = Enum.Font.SciFi
-TargetLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-TargetLabel.TextSize = 14
-TargetLabel.BackgroundTransparency = 1
-TargetLabel.Position = UDim2.new(0.05, 0, 0.55, 0)
-TargetLabel.Size = UDim2.new(0.9, 0, 0, 30)
-
--- BRING TOGGLE
-local BringPlayerToggle = Instance.new("TextButton")
-BringPlayerToggle.Parent = BringPlayerTab
-BringPlayerToggle.Text = "👥 TARIK PLAYER: OFF"
-BringPlayerToggle.Font = Enum.Font.SciFi
-BringPlayerToggle.TextColor3 = Color3.fromRGB(255, 50, 50)
-BringPlayerToggle.TextSize = 16
-BringPlayerToggle.Position = UDim2.new(0.05, 0, 0.65, 0)
-BringPlayerToggle.Size = UDim2.new(0.9, 0, 0, 45)
-BringPlayerToggle.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-BringPlayerToggle.BorderColor3 = Color3.fromRGB(0, 255, 255)
-
--- BRING SPEED
-local BringSpeedBox = Instance.new("TextBox")
-BringSpeedBox.Parent = BringPlayerTab
-BringSpeedBox.Text = "50"
-BringSpeedBox.Font = Enum.Font.SciFi
-BringSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-BringSpeedBox.TextSize = 14
-BringSpeedBox.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-BringSpeedBox.BorderColor3 = Color3.fromRGB(0, 255, 255)
-BringSpeedBox.Position = UDim2.new(0.05, 0, 0.75, 0)
-BringSpeedBox.Size = UDim2.new(0.9, 0, 0, 35)
-BringSpeedBox.PlaceholderText = "Kecepatan tarik (1-100)"
-
--- ==================== SPAM REMOTE TAB ====================
-SpamTab.Name = "SpamRemoteTab"
-SpamTab.Parent = TabContents
-SpamTab.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-SpamTab.BorderSizePixel = 0
-SpamTab.Size = UDim2.new(1, 0, 1, 0)
-SpamTab.ScrollBarThickness = 5
-SpamTab.CanvasSize = UDim2.new(0, 0, 0, 500)
-SpamTab.Visible = false
-
-local SpamTitle = Instance.new("TextLabel")
-SpamTitle.Parent = SpamTab
-SpamTitle.Text = "💥 SPAM REMOTE"
-SpamTitle.Font = Enum.Font.SciFi
-SpamTitle.TextColor3 = Color3.fromRGB(0, 255, 255)
-SpamTitle.TextSize = 18
-SpamTitle.BackgroundTransparency = 1
-SpamTitle.Position = UDim2.new(0.05, 0, 0.02, 0)
-SpamTitle.Size = UDim2.new(0.9, 0, 0, 30)
-
--- SCAN BUTTON
-local ScanBtn = Instance.new("TextButton")
-ScanBtn.Parent = SpamTab
-ScanBtn.Text = "🔍 SCAN BACKDOOR"
-ScanBtn.Font = Enum.Font.SciFi
-ScanBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ScanBtn.TextSize = 16
-ScanBtn.Position = UDim2.new(0.05, 0, 0.1, 0)
-ScanBtn.Size = UDim2.new(0.9, 0, 0, 45)
-ScanBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-ScanBtn.BorderColor3 = Color3.fromRGB(0, 255, 255)
-
--- STATUS
-local StatusFrame = Instance.new("Frame")
-StatusFrame.Parent = SpamTab
-StatusFrame.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-StatusFrame.BorderSizePixel = 0
-StatusFrame.Position = UDim2.new(0.05, 0, 0.25, 0)
-StatusFrame.Size = UDim2.new(0.1, 0, 0, 20)
-
-local StatusText = Instance.new("TextLabel")
-StatusText.Parent = SpamTab
-StatusText.Text = "STATUS: NOT READY"
-StatusText.Font = Enum.Font.SciFi
-StatusText.TextColor3 = Color3.fromRGB(255, 50, 50)
-StatusText.TextSize = 14
-StatusText.BackgroundTransparency = 1
-StatusText.Position = UDim2.new(0.2, 0, 0.25, 0)
-StatusText.Size = UDim2.new(0.75, 0, 0, 20)
-
--- SPAM INTENSITY
-local IntensityBox = Instance.new("TextBox")
-IntensityBox.Parent = SpamTab
-IntensityBox.Text = "100"
-IntensityBox.Font = Enum.Font.SciFi
-IntensityBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-IntensityBox.TextSize = 14
-IntensityBox.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-IntensityBox.BorderColor3 = Color3.fromRGB(0, 255, 255)
-IntensityBox.Position = UDim2.new(0.05, 0, 0.35, 0)
-IntensityBox.Size = UDim2.new(0.9, 0, 0, 35)
-IntensityBox.PlaceholderText = "Intensitas spam (1-1000)"
-
--- START/STOP BUTTONS
-local StartSpamBtn = Instance.new("TextButton")
-StartSpamBtn.Parent = SpamTab
-StartSpamBtn.Text = "🔥 START SPAM"
-StartSpamBtn.Font = Enum.Font.SciFi
-StartSpamBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
-StartSpamBtn.TextSize = 16
-StartSpamBtn.Position = UDim2.new(0.05, 0, 0.45, 0)
-StartSpamBtn.Size = UDim2.new(0.9, 0, 0, 45)
-StartSpamBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-StartSpamBtn.BorderColor3 = Color3.fromRGB(255, 50, 50)
-
-local StopSpamBtn = Instance.new("TextButton")
-StopSpamBtn.Parent = SpamTab
-StopSpamBtn.Text = "⏹️ STOP SPAM"
-StopSpamBtn.Font = Enum.Font.SciFi
-StopSpamBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-StopSpamBtn.TextSize = 14
-StopSpamBtn.Position = UDim2.new(0.05, 0, 0.55, 0)
-StopSpamBtn.Size = UDim2.new(0.9, 0, 0, 40)
-StopSpamBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-StopSpamBtn.BorderColor3 = Color3.fromRGB(255, 50, 50)
-
--- ==================== FUNCTIONS ====================
-
--- FLY FUNCTIONS
+-- Fly Function
 local function updateFly()
     if flyEnabled then
-        if not Player.Character or not Player.Character:FindFirstChild("HumanoidRootPart") then
-            return
+        if not plr.Character or not plr.Character:FindFirstChild("HumanoidRootPart") then return end
+        
+        local hrp = plr.Character.HumanoidRootPart
+        
+        if not bv then
+            bv = Instance.new("BodyVelocity")
+            bv.MaxForce = Vector3.new(4000, 4000, 4000)
+            bv.P = 1250
+            bv.Parent = hrp
         end
         
-        local humanoidRootPart = Player.Character.HumanoidRootPart
-        
-        if not bodyVelocity then
-            bodyVelocity = Instance.new("BodyVelocity")
-            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-            bodyVelocity.MaxForce = Vector3.new(4000, 4000, 4000)
-            bodyVelocity.P = 1250
-            bodyVelocity.Parent = humanoidRootPart
+        if not bg then
+            bg = Instance.new("BodyGyro")
+            bg.MaxTorque = Vector3.new(50000, 50000, 50000)
+            bg.P = 3000
+            bg.Parent = hrp
         end
         
-        if not bodyGyro then
-            bodyGyro = Instance.new("BodyGyro")
-            bodyGyro.MaxTorque = Vector3.new(50000, 50000, 50000)
-            bodyGyro.P = 3000
-            bodyGyro.CFrame = workspace.CurrentCamera.CFrame
-            bodyGyro.Parent = humanoidRootPart
-        end
-        
-        flyConnection = RunService.Heartbeat:Connect(function()
-            if not flyEnabled or not bodyVelocity or not bodyGyro then
-                return
+        local conn
+        conn = run.Heartbeat:Connect(function()
+            if not flyEnabled then conn:Disconnect() return end
+            
+            local cam = ws.CurrentCamera
+            local lv = cam.CFrame.LookVector
+            local rv = cam.CFrame.RightVector
+            
+            local move = Vector3.new(0, 0, 0)
+            
+            -- Virtual Joystick Controls
+            local vJoy = game:GetService("VirtualInputManager")
+            -- Note: Virtual joystick input detection would go here
+            
+            -- Keyboard fallback for testing
+            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.W) then
+                move = move + (lv * flySpeed)
+            end
+            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.S) then
+                move = move - (lv * flySpeed)
+            end
+            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.A) then
+                move = move - (rv * flySpeed)
+            end
+            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.D) then
+                move = move + (rv * flySpeed)
             end
             
-            local camera = workspace.CurrentCamera
-            local lookVector = camera.CFrame.LookVector
-            local rightVector = camera.CFrame.RightVector
-            local upVector = Vector3.new(0, 1, 0)
+            bv.Velocity = move
+            bg.CFrame = cam.CFrame
             
-            local velocity = Vector3.new(0, 0, 0)
-            
-            -- Joystick Controls
-            if joystickActive then
-                local framePos = JoystickBackground.AbsolutePosition
-                local frameSize = JoystickBackground.AbsoluteSize
-                local centerX = framePos.X + frameSize.X/2
-                local centerY = framePos.Y + frameSize.Y/2
-                
-                local joyX = (joystickCurrentPos.X - centerX) / joystickRadius
-                local joyY = (joystickCurrentPos.Y - centerY) / joystickRadius
-                
-                joyX = math.clamp(joyX, -1, 1)
-                joyY = math.clamp(joyY, -1, 1)
-                
-                -- Forward/Backward
-                if joyY < -0.1 then
-                    velocity = velocity + (lookVector * flySpeed * math.abs(joyY))
-                elseif joyY > 0.1 then
-                    velocity = velocity - (lookVector * flySpeed * math.abs(joyY))
-                end
-                
-                -- Left/Right
-                if joyX < -0.1 then
-                    velocity = velocity - (rightVector * flySpeed * math.abs(joyX))
-                elseif joyX > 0.1 then
-                    velocity = velocity + (rightVector * flySpeed * math.abs(joyX))
-                end
-            end
-            
-            -- Altitude Controls
-            if altitudeUp then
-                velocity = velocity + (upVector * flySpeed * 0.7)
-            elseif altitudeDown then
-                velocity = velocity - (upVector * flySpeed * 0.7)
-            end
-            
-            bodyVelocity.Velocity = velocity
-            bodyGyro.CFrame = camera.CFrame
-            
-            -- No Clip
-            if NoClipToggle.Text:find("ON") then
-                for _, part in pairs(Player.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
+            -- No clip
+            for _, v in pairs(plr.Character:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.CanCollide = false
                 end
             end
         end)
     else
-        if flyConnection then
-            flyConnection:Disconnect()
-            flyConnection = nil
-        end
-        
-        if bodyVelocity then
-            bodyVelocity:Destroy()
-            bodyVelocity = nil
-        end
-        
-        if bodyGyro then
-            bodyGyro:Destroy()
-            bodyGyro = nil
-        end
-        
-        -- Reset collision
-        if Player.Character then
-            for _, part in pairs(Player.Character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                end
-            end
-        end
-        
-        JoystickKnob.Position = UDim2.new(0.425, 0, 0.425, 0)
+        if bv then bv:Destroy() bv = nil end
+        if bg then bg:Destroy() bg = nil end
     end
 end
 
--- JOYSTICK TOUCH CONTROLS
-JoystickBackground.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch then
-        joystickActive = true
-        joystickStartPos = Vector2.new(
-            JoystickBackground.AbsolutePosition.X + JoystickBackground.AbsoluteSize.X/2,
-            JoystickBackground.AbsolutePosition.Y + JoystickBackground.AbsoluteSize.Y/2
-        )
-        joystickCurrentPos = Vector2.new(input.Position.X, input.Position.Y)
-    end
-end)
-
-JoystickBackground.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch and joystickActive then
-        joystickCurrentPos = Vector2.new(input.Position.X, input.Position.Y)
-        
-        -- Update visual
-        local framePos = JoystickBackground.AbsolutePosition
-        local frameSize = JoystickBackground.AbsoluteSize
-        local centerX = framePos.X + frameSize.X/2
-        local centerY = framePos.Y + frameSize.Y/2
-        
-        local deltaX = joystickCurrentPos.X - centerX
-        local deltaY = joystickCurrentPos.Y - centerY
-        local distance = math.sqrt(deltaX^2 + deltaY^2)
-        
-        if distance > joystickRadius then
-            deltaX = deltaX * (joystickRadius / distance)
-            deltaY = deltaY * (joystickRadius / distance)
-        end
-        
-        local newX = (deltaX / frameSize.X) + 0.425
-        local newY = (deltaY / frameSize.Y) + 0.425
-        
-        JoystickKnob.Position = UDim2.new(newX, 0, newY, 0)
-    end
-end)
-
-JoystickBackground.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch then
-        joystickActive = false
-        local tween = TweenService:Create(
-            JoystickKnob,
-            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-            {Position = UDim2.new(0.425, 0, 0.425, 0)}
-        )
-        tween:Play()
-    end
-end)
-
--- ALTITUDE BUTTONS
-UpButton.MouseButton1Down:Connect(function()
-    altitudeUp = true
-    UpButton.BackgroundColor3 = Color3.fromRGB(50, 100, 50)
-end)
-
-UpButton.MouseButton1Up:Connect(function()
-    altitudeUp = false
-    UpButton.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-end)
-
-DownButton.MouseButton1Down:Connect(function()
-    altitudeDown = true
-    DownButton.BackgroundColor3 = Color3.fromRGB(100, 50, 50)
-end)
-
-DownButton.MouseButton1Up:Connect(function()
-    altitudeDown = false
-    DownButton.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-end)
-
--- FLY TOGGLE
-FlyToggle.MouseButton1Click:Connect(function()
+flyBtn.MouseButton1Click:Connect(function()
     flyEnabled = not flyEnabled
+    flyBtn.Text = flyEnabled and "🚀 FLY: ON" or "🚀 FLY: OFF"
+    flyBtn.TextColor3 = flyEnabled and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+    updateFly()
+end)
+
+speedBox.FocusLost:Connect(function()
+    local s = tonumber(speedBox.Text)
+    if s and s > 0 and s < 200 then
+        flySpeed = s
+    else
+        speedBox.Text = flySpeed
+    end
+end)
+
+-- ========== GOTO PLAYER ==========
+local gotoFrame = tabFrames["Goto"]
+local selectedPlayer = nil
+
+-- Player List
+local gotoList = Instance.new("ScrollingFrame", gotoFrame)
+gotoList.Size = UDim2.new(0.96, 0, 0, 200)
+gotoList.Position = UDim2.new(0.02, 0, 0.02, 0)
+gotoList.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+gotoList.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+-- Refresh
+local refreshBtn = Instance.new("TextButton", gotoFrame)
+refreshBtn.Text = "🔄 Refresh"
+refreshBtn.Size = UDim2.new(0.96, 0, 0, 40)
+refreshBtn.Position = UDim2.new(0.02, 0, 0.55, 0)
+refreshBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+
+-- Teleport
+local tpBtn = Instance.new("TextButton", gotoFrame)
+tpBtn.Text = "⚡ Teleport"
+tpBtn.Size = UDim2.new(0.96, 0, 0, 40)
+tpBtn.Position = UDim2.new(0.02, 0, 0.7, 0)
+tpBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+tpBtn.TextColor3 = Color3.fromRGB(255, 255, 0)
+
+local function updateGotoList()
+    gotoList:ClearAllChildren()
+    local y = 5
     
-    if flyEnabled then
-        FlyToggle.Text = "🚀 FLY MODE: ON"
-        FlyToggle.TextColor3 = Color3.fromRGB(50, 255, 50)
-        if not Player.Character then Player.CharacterAdded:Wait() end
-        if not Player.Character:FindFirstChild("HumanoidRootPart") then
-            Player.Character:WaitForChild("HumanoidRootPart")
-        end
-        updateFly()
-    else
-        FlyToggle.Text = "🚀 FLY MODE: OFF"
-        FlyToggle.TextColor3 = Color3.fromRGB(255, 50, 50)
-        updateFly()
-        altitudeUp = false
-        altitudeDown = false
-        UpButton.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-        DownButton.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-    end
-end)
-
--- SPEED CONTROL
-SpeedBox.FocusLost:Connect(function()
-    local speed = tonumber(SpeedBox.Text)
-    if speed and speed >= 1 and speed <= 200 then
-        flySpeed = speed
-        SpeedLabel.Text = "KE CEPATAN: " .. speed
-    else
-        SpeedBox.Text = flySpeed
-    end
-end)
-
--- NO CLIP TOGGLE
-NoClipToggle.MouseButton1Click:Connect(function()
-    if NoClipToggle.Text:find("ON") then
-        NoClipToggle.Text = "🔓 NO CLIP: OFF"
-        NoClipToggle.TextColor3 = Color3.fromRGB(255, 50, 50)
-    else
-        NoClipToggle.Text = "🔓 NO CLIP: ON"
-        NoClipToggle.TextColor3 = Color3.fromRGB(50, 255, 50)
-    end
-end)
-
--- PLAYER LIST FUNCTIONS
-local function updateGotoPlayerList()
-    PlayerListFrame:ClearAllChildren()
-    local yOffset = 5
-    
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= Player then
-            local btn = Instance.new("TextButton")
-            btn.Parent = PlayerListFrame
-            btn.Text = player.Name
-            btn.Font = Enum.Font.SciFi
-            btn.TextColor3 = Color3.fromRGB(200, 200, 200)
-            btn.TextSize = 12
+    for _, p in pairs(game:GetService("Players"):GetPlayers()) do
+        if p ~= plr then
+            local btn = Instance.new("TextButton", gotoList)
+            btn.Text = p.Name
+            btn.Size = UDim2.new(0.94, 0, 0, 30)
+            btn.Position = UDim2.new(0.03, 0, 0, y)
             btn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-            btn.BorderSizePixel = 0
-            btn.Position = UDim2.new(0.05, 0, 0, yOffset)
-            btn.Size = UDim2.new(0.9, 0, 0, 30)
             
             btn.MouseButton1Click:Connect(function()
-                selectedPlayer = player
-                SelectedLabel.Text = "Dipilih: " .. player.Name
+                selectedPlayer = p
             end)
             
-            yOffset = yOffset + 35
+            y = y + 35
         end
     end
     
-    PlayerListFrame.CanvasSize = UDim2.new(0, 0, 0, yOffset)
+    gotoList.CanvasSize = UDim2.new(0, 0, 0, y)
 end
 
-local function updateBringPlayerList()
-    BringPlayerList:ClearAllChildren()
-    local yOffset = 5
-    
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= Player then
-            local btn = Instance.new("TextButton")
-            btn.Parent = BringPlayerList
-            btn.Text = player.Name
-            btn.Font = Enum.Font.SciFi
-            btn.TextColor3 = Color3.fromRGB(200, 200, 200)
-            btn.TextSize = 12
-            btn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-            btn.BorderSizePixel = 0
-            btn.Position = UDim2.new(0.05, 0, 0, yOffset)
-            btn.Size = UDim2.new(0.9, 0, 0, 30)
-            
-            btn.MouseButton1Click:Connect(function()
-                selectedTargetPlayer = player
-                TargetLabel.Text = "Target: " .. player.Name
-            end)
-            
-            yOffset = yOffset + 35
-        end
-    end
-    
-    BringPlayerList.CanvasSize = UDim2.new(0, 0, 0, yOffset)
-end
-
--- GOTO PLAYER FUNCTIONS
-RefreshBtn.MouseButton1Click:Connect(function()
-    updateGotoPlayerList()
-end)
-
-GotoButton.MouseButton1Click:Connect(function()
+refreshBtn.MouseButton1Click:Connect(updateGotoList)
+tpBtn.MouseButton1Click:Connect(function()
     if selectedPlayer and selectedPlayer.Character then
         local target = selectedPlayer.Character:FindFirstChild("HumanoidRootPart")
         if target then
-            Player.Character:WaitForChild("HumanoidRootPart").CFrame = target.CFrame
-            SelectedLabel.Text = "Berhasil teleport ke: " .. selectedPlayer.Name
+            plr.Character:WaitForChild("HumanoidRootPart").CFrame = target.CFrame
         end
     end
 end)
 
--- BRING PART FUNCTIONS
-BringPartToggle.MouseButton1Click:Connect(function()
+updateGotoList()
+
+-- ========== BRING PART ==========
+local bringPFrame = tabFrames["BringP"]
+local bringingParts = false
+
+local bringBtn = Instance.new("TextButton", bringPFrame)
+bringBtn.Text = "🧲 Bring Parts: OFF"
+bringBtn.Size = UDim2.new(0.96, 0, 0, 40)
+bringBtn.Position = UDim2.new(0.02, 0, 0.02, 0)
+bringBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+
+bringBtn.MouseButton1Click:Connect(function()
     bringingParts = not bringingParts
+    bringBtn.Text = bringingParts and "🧲 Bring Parts: ON" or "🧲 Bring Parts: OFF"
     
     if bringingParts then
-        BringPartToggle.Text = "🧲 MULAI TARIK PART: ON"
-        BringPartToggle.TextColor3 = Color3.fromRGB(50, 255, 50)
-        
         spawn(function()
-            local radius = tonumber(RadiusBox.Text) or 10
-            local unlock = UnlockToggle.Text:find("ON")
-            local root = Player.Character:WaitForChild("HumanoidRootPart")
-            local parts = Workspace:GetDescendants()
-            local partCount = 0
+            local radius = 10
+            local root = plr.Character:WaitForChild("HumanoidRootPart")
             
-            for _, part in pairs(parts) do
-                if bringingParts and part:IsA("BasePart") and part ~= root then
-                    partCount = partCount + 1
-                    
-                    if unlock then
-                        pcall(function()
-                            part.Locked = false
-                            local weld = part:FindFirstChildOfClass("Weld")
-                            if weld then weld:Destroy() end
-                        end)
-                    end
-                    
-                    local angle = partCount * (360 / math.max(1, partCount))
-                    local offset = Vector3.new(
-                        math.cos(math.rad(angle)) * radius,
-                        0,
-                        math.sin(math.rad(angle)) * radius
-                    )
-                    
-                    local targetPos = root.Position + offset
-                    
-                    spawn(function()
-                        for i = 1, 50 do
-                            if not bringingParts then break end
-                            pcall(function()
-                                part.Velocity = (targetPos - part.Position).Unit * 100
-                            end)
-                            wait(0.02)
-                        end
-                    end)
-                end
-            end
-            
-            PartCounterLabel.Text = "PART DITEMUKAN: " .. partCount
-        end)
-    else
-        BringPartToggle.Text = "🧲 MULAI TARIK PART: OFF"
-        BringPartToggle.TextColor3 = Color3.fromRGB(255, 50, 50)
-    end
-end)
-
-UnlockToggle.MouseButton1Click:Connect(function()
-    if UnlockToggle.Text:find("OFF") then
-        UnlockToggle.Text = "🔓 BUKA PART TERKUNCI: ON"
-        UnlockToggle.TextColor3 = Color3.fromRGB(50, 255, 50)
-    else
-        UnlockToggle.Text = "🔓 BUKA PART TERKUNCI: OFF"
-        UnlockToggle.TextColor3 = Color3.fromRGB(255, 50, 50)
-    end
-end)
-
--- BRING PLAYER FUNCTIONS
-BringPlayerToggle.MouseButton1Click:Connect(function()
-    bringingPlayers = not bringingPlayers
-    
-    if bringingPlayers then
-        BringPlayerToggle.Text = "👥 TARIK PLAYER: ON"
-        BringPlayerToggle.TextColor3 = Color3.fromRGB(50, 255, 50)
-        
-        spawn(function()
-            while bringingPlayers and selectedTargetPlayer do
-                local speed = tonumber(BringSpeedBox.Text) or 50
-                local target = selectedTargetPlayer.Character
+            while bringingParts do
+                local parts = ws:GetDescendants()
+                local count = 0
                 
-                if target and target:FindFirstChild("HumanoidRootPart") then
-                    local targetRoot = target.HumanoidRootPart
-                    local myRoot = Player.Character:WaitForChild("HumanoidRootPart")
-                    
-                    targetRoot.Velocity = (myRoot.Position - targetRoot.Position).Unit * speed
+                for _, part in pairs(parts) do
+                    if part:IsA("BasePart") and part ~= root then
+                        count = count + 1
+                        local angle = count * (360 / math.max(1, count))
+                        local offset = Vector3.new(
+                            math.cos(math.rad(angle)) * radius,
+                            0,
+                            math.sin(math.rad(angle)) * radius
+                        )
+                        
+                        part.Velocity = ((root.Position + offset) - part.Position).Unit * 100
+                    end
                 end
                 wait(0.1)
             end
         end)
-    else
-        BringPlayerToggle.Text = "👥 TARIK PLAYER: OFF"
-        BringPlayerToggle.TextColor3 = Color3.fromRGB(255, 50, 50)
     end
 end)
 
--- SPAM REMOTE FUNCTIONS
-local spamConnection
-local function scanForBackdoors()
-    StatusText.Text = "STATUS: SCANNING..."
-    StatusFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
-    
-    local found = false
-    local locations = {ReplicatedStorage, Workspace, game:GetService("Lighting")}
-    
-    for _, location in pairs(locations) do
-        pcall(function()
-            for _, obj in pairs(location:GetDescendants()) do
-                if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-                    found = true
-                    currentRemoteSpam = obj
-                    break
-                end
-            end
-        end)
-        if found then break end
-    end
-    
-    if found then
-        StatusText.Text = "STATUS: READY"
-        StatusFrame.BackgroundColor3 = Color3.fromRGB(50, 255, 50)
-    else
-        StatusText.Text = "STATUS: NOT READY"
-        StatusFrame.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-    end
-end
+-- ========== BRING PLAYER ==========
+local bringPlFrame = tabFrames["BringPl"]
+local bringingPlayer = false
+local targetPlayer = nil
 
-local function startSpam()
-    if not currentRemoteSpam then return end
-    
-    local intensity = tonumber(IntensityBox.Text) or 100
-    local delay = 1 / intensity
-    
-    spamConnection = RunService.Heartbeat:Connect(function()
-        pcall(function()
-            if currentRemoteSpam:IsA("RemoteEvent") then
-                currentRemoteSpam:FireServer()
-            elseif currentRemoteSpam:IsA("RemoteFunction") then
-                currentRemoteSpam:InvokeServer()
-            end
-        end)
-    end)
-    
-    StatusText.Text = "STATUS: SPAMMING..."
-    StatusFrame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-end
+local bringPlList = Instance.new("ScrollingFrame", bringPlFrame)
+bringPlList.Size = UDim2.new(0.96, 0, 0, 200)
+bringPlList.Position = UDim2.new(0.02, 0, 0.02, 0)
+bringPlList.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+bringPlList.CanvasSize = UDim2.new(0, 0, 0, 0)
 
-ScanBtn.MouseButton1Click:Connect(scanForBackdoors)
-StartSpamBtn.MouseButton1Click:Connect(startSpam)
-
-StopSpamBtn.MouseButton1Click:Connect(function()
-    if spamConnection then
-        spamConnection:Disconnect()
-        spamConnection = nil
-    end
-    StatusText.Text = "STATUS: STOPPED"
-    StatusFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
-end)
-
--- ==================== TAB SYSTEM ====================
-for i, tabName in pairs(Tabs) do
-    local TabButton = Instance.new("TextButton")
-    TabButton.Parent = TabButtons
-    TabButton.Text = tabName
-    TabButton.Font = Enum.Font.SciFi
-    TabButton.TextColor3 = Color3.fromRGB(200, 200, 200)
-    TabButton.TextSize = 12
-    TabButton.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-    TabButton.BorderSizePixel = 0
-    TabButton.Position = UDim2.new(0, 0, 0, (i-1) * 60)
-    TabButton.Size = UDim2.new(1, 0, 0, 60)
+local function updateBringPlList()
+    bringPlList:ClearAllChildren()
+    local y = 5
     
-    TabButton.MouseButton1Click:Connect(function()
-        FlyTab.Visible = false
-        GotoTab.Visible = false
-        BringPartTab.Visible = false
-        BringPlayerTab.Visible = false
-        SpamTab.Visible = false
-        
-        if tabName == "Fly" then
-            FlyTab.Visible = true
-        elseif tabName == "Goto Player" then
-            GotoTab.Visible = true
-            updateGotoPlayerList()
-        elseif tabName == "Bring Part" then
-            BringPartTab.Visible = true
-        elseif tabName == "Bring Player" then
-            BringPlayerTab.Visible = true
-            updateBringPlayerList()
-        elseif tabName == "Spam Remote" then
-            SpamTab.Visible = true
+    for _, p in pairs(game:GetService("Players"):GetPlayers()) do
+        if p ~= plr then
+            local btn = Instance.new("TextButton", bringPlList)
+            btn.Text = p.Name
+            btn.Size = UDim2.new(0.94, 0, 0, 30)
+            btn.Position = UDim2.new(0.03, 0, 0, y)
+            btn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+            
+            btn.MouseButton1Click:Connect(function()
+                targetPlayer = p
+            end)
+            
+            y = y + 35
         end
-    end)
+    end
+    
+    bringPlList.CanvasSize = UDim2.new(0, 0, 0, y)
 end
 
--- INITIALIZE
-updateGotoPlayerList()
-updateBringPlayerList()
+local bringPlBtn = Instance.new("TextButton", bringPlFrame)
+bringPlBtn.Text = "👥 Bring Player: OFF"
+bringPlBtn.Size = UDim2.new(0.96, 0, 0, 40)
+bringPlBtn.Position = UDim2.new(0.02, 0, 0.55, 0)
+bringPlBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 
--- CLEANUP
-game:GetService("Players").PlayerRemoving:Connect(function(plr)
-    if plr == Player then
-        if flyConnection then flyConnection:Disconnect() end
-        if bodyVelocity then bodyVelocity:Destroy() end
-        if bodyGyro then bodyGyro:Destroy() end
-        if spamConnection then spamConnection:Disconnect() end
-        RownnGui:Destroy()
+bringPlBtn.MouseButton1Click:Connect(function()
+    bringingPlayer = not bringingPlayer
+    bringPlBtn.Text = bringingPlayer and "👥 Bring Player: ON" or "👥 Bring Player: OFF"
+    
+    if bringingPlayer then
+        spawn(function()
+            while bringingPlayer and targetPlayer do
+                if targetPlayer.Character then
+                    local targetRoot = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    local myRoot = plr.Character:WaitForChild("HumanoidRootPart")
+                    
+                    if targetRoot then
+                        targetRoot.Velocity = (myRoot.Position - targetRoot.Position).Unit * 50
+                    end
+                end
+                wait(0.1)
+            end
+        end)
     end
 end)
 
--- SUCCESS MESSAGE
-print("==========================================")
-print("ROWNN GUI v2.0 LOADED SUCCESSFULLY!")
-print("Created by: zamxs | DARK-GPT Premium")
-print("Features:")
-print("1. Fly System (Mobile Controls)")
-print("2. Goto Player Teleport")
-print("3. Bring All Parts")
-print("4. Bring Player")
-print("5. Remote Spam")
-print("==========================================")
+updateBringPlList()
+
+-- ========== SPAM REMOTE ==========
+local spamFrame = tabFrames["Spam"]
+local spamming = false
+
+local scanBtn = Instance.new("TextButton", spamFrame)
+scanBtn.Text = "🔍 Scan Remotes"
+scanBtn.Size = UDim2.new(0.96, 0, 0, 40)
+scanBtn.Position = UDim2.new(0.02, 0, 0.02, 0)
+scanBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+
+local status = Instance.new("TextLabel", spamFrame)
+status.Text = "Status: Not Ready"
+status.Size = UDim2.new(0.96, 0, 0, 30)
+status.Position = UDim2.new(0.02, 0, 0.15, 0)
+status.BackgroundTransparency = 1
+status.TextColor3 = Color3.fromRGB(255, 50, 50)
+
+local startBtn = Instance.new("TextButton", spamFrame)
+startBtn.Text = "🔥 Start Spam"
+startBtn.Size = UDim2.new(0.96, 0, 0, 40)
+startBtn.Position = UDim2.new(0.02, 0, 0.3, 0)
+startBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+startBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
+
+local stopBtn = Instance.new("TextButton", spamFrame)
+stopBtn.Text = "⏹️ Stop"
+stopBtn.Size = UDim2.new(0.96, 0, 0, 40)
+stopBtn.Position = UDim2.new(0.02, 0, 0.45, 0)
+stopBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+
+local remoteToSpam = nil
+
+scanBtn.MouseButton1Click:Connect(function()
+    for _, obj in pairs(game:GetDescendants()) do
+        if obj:IsA("RemoteEvent") then
+            remoteToSpam = obj
+            status.Text = "Status: Ready (" .. obj.Name .. ")"
+            status.TextColor3 = Color3.fromRGB(50, 255, 50)
+            return
+        end
+    end
+    status.Text = "Status: No Remotes Found"
+end)
+
+startBtn.MouseButton1Click:Connect(function()
+    if remoteToSpam then
+        spamming = true
+        spawn(function()
+            while spamming do
+                pcall(function()
+                    remoteToSpam:FireServer()
+                end)
+                wait()
+            end
+        end)
+    end
+end)
+
+stopBtn.MouseButton1Click:Connect(function()
+    spamming = false
+end)
+
+-- Cleanup
+game:GetService("Players").PlayerRemoving:Connect(function(p)
+    if p == plr then
+        gui:Destroy()
+        if bv then bv:Destroy() end
+        if bg then bg:Destroy() end
+    end
+end)
+
+print("ROWNN GUI LOADED!")
