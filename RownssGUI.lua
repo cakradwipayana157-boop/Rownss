@@ -1,78 +1,61 @@
--- ROWNN GUI ULTIMATE v5.0 - FLY SYSTEM FIXED
--- Android Optimized - All Features Working
--- By: zamxs | DARK-GPT Special Edition
+-- ROWNN GUI - Fly Beneran Bisa Terbang Cepat
+-- GUI Kecil, Bisa Drag, Android Optimized
 
 local Player = game:GetService("Players").LocalPlayer
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
-local CoreGui = game:GetService("CoreGui")
-local Players = game:GetService("Players")
 
--- ========== LOADER SCREEN ==========
-print("╔════════════════════════════════════════╗")
-print("║        ROWNN GUI ULTIMATE v5.0         ║")
-print("║          Loading Resources...          ║")
-print("╚════════════════════════════════════════╝")
-
-wait(0.5)
-
--- ========== CREATE GUI ==========
+-- GUI KECIL YANG BISA DI-DRAG
 local RownnGui = Instance.new("ScreenGui")
-RownnGui.Name = "RownnGuiUltimate"
-RownnGui.Parent = CoreGui
+RownnGui.Name = "RownnGui"
+RownnGui.Parent = game:GetService("CoreGui")
 
--- Main Container (Mobile Optimized)
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = RownnGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 25, 15)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 30, 20)
 MainFrame.BorderColor3 = Color3.fromRGB(0, 255, 100)
 MainFrame.BorderSizePixel = 2
-MainFrame.Position = UDim2.new(0.1, 0, 0.1, 0)
-MainFrame.Size = UDim2.new(0, 350, 0, 50)
+MainFrame.Position = UDim2.new(0.05, 0, 0.05, 0) -- GUI kecil di pojok
+MainFrame.Size = UDim2.new(0, 180, 0, 40) -- UKURAN KECIL
 MainFrame.Active = true
 MainFrame.Draggable = true
 
--- Title Bar
-local TitleBar = Instance.new("TextButton")
-TitleBar.Name = "TitleBar"
-TitleBar.Parent = MainFrame
-TitleBar.Text = "⚡ ROWNN GUI ▼"
-TitleBar.Size = UDim2.new(1, 0, 0, 50)
-TitleBar.BackgroundColor3 = Color3.fromRGB(0, 50, 0)
-TitleBar.TextColor3 = Color3.fromRGB(255, 50, 50)
-TitleBar.Font = Enum.Font.GothamBold
-TitleBar.TextSize = 16
+-- TITLE BAR KECIL
+local Title = Instance.new("TextButton")
+Title.Text = "ROWNN ▼"
+Title.Size = UDim2.new(1, 0, 1, 0)
+Title.BackgroundColor3 = Color3.fromRGB(0, 50, 0)
+Title.TextColor3 = Color3.fromRGB(255, 50, 50)
+Title.Font = Enum.Font.SciFi
+Title.TextSize = 14
+Title.Parent = MainFrame
 
--- Content Area
+-- CONTENT AREA
 local Content = Instance.new("Frame")
-Content.Name = "Content"
-Content.Parent = MainFrame
-Content.BackgroundColor3 = Color3.fromRGB(20, 30, 20)
-Content.Position = UDim2.new(0, 0, 0, 50)
-Content.Size = UDim2.new(1, 0, 0, 400)
+Content.BackgroundColor3 = Color3.fromRGB(25, 35, 25)
+Content.Position = UDim2.new(0, 0, 0, 40)
+Content.Size = UDim2.new(1, 0, 0, 300)
 Content.Visible = false
+Content.Parent = MainFrame
 
--- Toggle GUI
-local GuiExpanded = false
-TitleBar.MouseButton1Click:Connect(function()
-    GuiExpanded = not GuiExpanded
-    Content.Visible = GuiExpanded
-    MainFrame.Size = GuiExpanded and UDim2.new(0, 350, 0, 450) or UDim2.new(0, 350, 0, 50)
-    TitleBar.Text = GuiExpanded and "⚡ ROWNN GUI ▲" or "⚡ ROWNN GUI ▼"
+-- TOGGLE GUI
+local GuiOpen = false
+Title.MouseButton1Click:Connect(function()
+    GuiOpen = not GuiOpen
+    Content.Visible = GuiOpen
+    MainFrame.Size = GuiOpen and UDim2.new(0, 180, 0, 340) or UDim2.new(0, 180, 0, 40)
+    Title.Text = GuiOpen and "ROWNN ▲" or "ROWNN ▼"
 end)
 
--- ========== CREATE SCROLLING TABS ==========
-local TabsFrame = Instance.new("ScrollingFrame")
-TabsFrame.Name = "TabsFrame"
-TabsFrame.Parent = Content
-TabsFrame.Size = UDim2.new(1, 0, 1, 0)
-TabsFrame.CanvasSize = UDim2.new(0, 0, 0, 800)
-TabsFrame.ScrollBarThickness = 5
-TabsFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 255, 100)
+-- SCROLLING FRAME UNTUK FITUR
+local ScrollFrame = Instance.new("ScrollingFrame")
+ScrollFrame.Size = UDim2.new(1, 0, 1, 0)
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 500)
+ScrollFrame.ScrollBarThickness = 3
+ScrollFrame.Parent = Content
 
--- ========== GLOBAL VARIABLES ==========
+-- ========== VARIABLES ==========
 local FlyEnabled = false
 local NoclipEnabled = false
 local InfJumpEnabled = false
@@ -84,203 +67,113 @@ local BringPartsEnabled = false
 local SpamRemoteEnabled = false
 
 local FlySpeed = 50
-local WalkSpeed = 16
-local JumpPower = 50
+local FlyConnection
 
-local FlyConnection, NoclipConnection, JumpConnection, EspConnection
-local OriginalWalkSpeed, OriginalJumpPower
-local OriginalTransparency = {}
-
--- ========== MOBILE TOUCH CONTROLS ==========
-local TouchControls = Instance.new("Frame")
-TouchControls.Name = "TouchControls"
-TouchControls.Parent = RownnGui
-TouchControls.BackgroundTransparency = 1
-TouchControls.Size = UDim2.new(1, 0, 1, 0)
-
--- Virtual Joystick Area (for Android)
-local JoystickArea = Instance.new("Frame", TouchControls)
-JoystickArea.Size = UDim2.new(0.3, 0, 0.3, 0)
-JoystickArea.Position = UDim2.new(0.05, 0, 0.6, 0)
-JoystickArea.BackgroundColor3 = Color3.fromRGB(0, 0, 0, 100)
-JoystickArea.BackgroundTransparency = 0.7
-JoystickArea.BorderSizePixel = 0
-
--- ========== CREATE FEATURE BUTTONS ==========
-local Features = {
-    {name = "FLY", icon = "🚀", yPos = 0.02},
-    {name = "NO CLIP", icon = "🔓", yPos = 0.12},
-    {name = "INFINITY JUMP", icon = "🦘", yPos = 0.22},
-    {name = "INVISIBLE", icon = "👻", yPos = 0.32},
-    {name = "HITBOX", icon = "🎯", yPos = 0.42},
-    {name = "ESP", icon = "👁️", yPos = 0.52},
-    {name = "SPEED HACK", icon = "⚡", yPos = 0.62},
-    {name = "BRING PARTS", icon = "🧲", yPos = 0.72},
-    {name = "SPAM REMOTE", icon = "🔥", yPos = 0.82}
-}
-
-local FeatureButtons = {}
-
-for i, feature in pairs(Features) do
-    local FeatureButton = Instance.new("TextButton")
-    FeatureButton.Name = feature.name .. "Btn"
-    FeatureButton.Parent = TabsFrame
-    FeatureButton.Text = feature.icon .. " " .. feature.name .. ": OFF"
-    FeatureButton.Size = UDim2.new(0.95, 0, 0, 45)
-    FeatureButton.Position = UDim2.new(0.025, 0, feature.yPos, 0)
-    FeatureButton.BackgroundColor3 = Color3.fromRGB(0, 70, 0)
-    FeatureButton.TextColor3 = Color3.fromRGB(255, 50, 50)
-    FeatureButton.Font = Enum.Font.GothamBold
-    FeatureButton.TextSize = 14
-    
-    FeatureButtons[feature.name] = FeatureButton
+-- ========== FLY SYSTEM YANG BENERAN BISA TERBANG CEPAT ==========
+local function CreateButton(name, yPos, callback)
+    local btn = Instance.new("TextButton")
+    btn.Text = name
+    btn.Size = UDim2.new(0.9, 0, 0, 35)
+    btn.Position = UDim2.new(0.05, 0, yPos, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(0, 70, 0)
+    btn.TextColor3 = Color3.fromRGB(255, 50, 50)
+    btn.Font = Enum.Font.SciFi
+    btn.TextSize = 12
+    btn.Parent = ScrollFrame
+    btn.MouseButton1Click = callback
+    return btn
 end
 
--- ========== FIXED FLY SYSTEM (BENERAN BISA TERBANG GERAK CEPAT) ==========
-FeatureButtons["FLY"].MouseButton1Click:Connect(function()
+-- FLY BUTTON
+local FlyBtn = CreateButton("🚀 FLY: OFF", 0.02, function()
     FlyEnabled = not FlyEnabled
-    FeatureButtons["FLY"].Text = FlyEnabled and "🚀 FLY: ON" or "🚀 FLY: OFF"
-    FeatureButtons["FLY"].TextColor3 = FlyEnabled and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(255, 50, 50)
+    FlyBtn.Text = FlyEnabled and "🚀 FLY: ON" or "🚀 FLY: OFF"
     
     if FlyEnabled then
-        -- Enable FLY SYSTEM YANG BENERAN BISA TERBANG
-        if not Player.Character then 
-            Player.CharacterAdded:Wait() 
-        end
-        
+        -- FLY YANG BENERAN BISA TERBANG CEPAT
+        if not Player.Character then return end
         local HumanoidRootPart = Player.Character:WaitForChild("HumanoidRootPart")
-        local Humanoid = Player.Character:WaitForChild("Humanoid")
+        local Humanoid = Player.Character:FindFirstChildOfClass("Humanoid")
         
-        -- Simpan state asli
+        -- Simpan state awal
         local originalGravity = workspace.Gravity
-        local originalWalkSpeed = Humanoid.WalkSpeed
         
-        -- Matikan gravity untuk karakter saja
-        workspace.Gravity = 0
-        
-        -- Set humanoid untuk bisa terbang
-        Humanoid.PlatformStand = true
-        
-        -- Buat BodyVelocity untuk kontrol gerakan
+        -- Buat BodyVelocity untuk kontrol gerak
         local BV = Instance.new("BodyVelocity")
         BV.Velocity = Vector3.new(0, 0, 0)
         BV.MaxForce = Vector3.new(10000, 10000, 10000)
-        BV.P = 10000
+        BV.P = 1250
         BV.Parent = HumanoidRootPart
         
         -- Buat BodyGyro untuk stabilisasi
         local BG = Instance.new("BodyGyro")
         BG.MaxTorque = Vector3.new(50000, 50000, 50000)
-        BG.P = 10000
+        BG.P = 3000
+        BG.D = 500
         BG.Parent = HumanoidRootPart
         
-        -- Variables untuk kontrol
-        local moveDirection = Vector3.new(0, 0, 0)
-        local verticalSpeed = 0
+        -- Biarkan kamera normal (tidak di-scriptable)
+        workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
         
-        -- Keyboard control mapping untuk testing (Android pakai virtual joystick)
-        local controlMap = {
-            Forward = Vector3.new(0, 0, -1),
-            Backward = Vector3.new(0, 0, 1),
-            Left = Vector3.new(-1, 0, 0),
-            Right = Vector3.new(1, 0, 0),
-            Up = Vector3.new(0, 1, 0),
-            Down = Vector3.new(0, -1, 0)
-        }
-        
-        FlyConnection = RunService.Heartbeat:Connect(function(deltaTime)
-            if not FlyEnabled or not Player.Character or not HumanoidRootPart then 
+        FlyConnection = RunService.Heartbeat:Connect(function()
+            if not FlyEnabled or not Player.Character then 
                 if FlyConnection then FlyConnection:Disconnect() end
                 return 
             end
             
             local camera = workspace.CurrentCamera
-            if not camera then return end
+            local look = camera.CFrame.LookVector
+            local right = camera.CFrame.RightVector
             
-            -- Reset move direction
-            moveDirection = Vector3.new(0, 0, 0)
-            verticalSpeed = 0
+            local move = Vector3.new(0, 0, 0)
             
-            -- Keyboard controls (untuk testing di PC)
+            -- Kontrol untuk PC (testing)
             if UIS:IsKeyDown(Enum.KeyCode.W) then
-                moveDirection = moveDirection + camera.CFrame.LookVector
+                move = move + (look * FlySpeed)
             end
             if UIS:IsKeyDown(Enum.KeyCode.S) then
-                moveDirection = moveDirection - camera.CFrame.LookVector
+                move = move - (look * FlySpeed)
             end
             if UIS:IsKeyDown(Enum.KeyCode.A) then
-                moveDirection = moveDirection - camera.CFrame.RightVector
+                move = move - (right * FlySpeed)
             end
             if UIS:IsKeyDown(Enum.KeyCode.D) then
-                moveDirection = moveDirection + camera.CFrame.RightVector
+                move = move + (right * FlySpeed)
             end
             if UIS:IsKeyDown(Enum.KeyCode.Space) then
-                verticalSpeed = FlySpeed
+                move = move + Vector3.new(0, FlySpeed, 0)
             end
             if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then
-                verticalSpeed = -FlySpeed
+                move = move - Vector3.new(0, FlySpeed, 0)
             end
-            
-            -- Normalize direction jika ada input
-            if moveDirection.Magnitude > 0 then
-                moveDirection = moveDirection.Unit * FlySpeed
-            end
-            
-            -- Tambahkan vertical movement
-            moveDirection = moveDirection + Vector3.new(0, verticalSpeed, 0)
             
             -- Terapkan kecepatan
-            BV.Velocity = moveDirection
+            BV.Velocity = move
             
             -- Stabilisasi orientasi
             BG.CFrame = camera.CFrame
             
-            -- Auto noclip saat terbang
+            -- Noclip otomatis saat terbang
             for _, part in pairs(Player.Character:GetDescendants()) do
                 if part:IsA("BasePart") then
                     part.CanCollide = false
                 end
             end
-            
-            -- Smooth camera follow
-            camera.CameraType = Enum.CameraType.Scriptable
-            camera.CFrame = CFrame.new(camera.CFrame.Position, HumanoidRootPart.Position)
-            
         end)
         
-        -- Setup untuk Android Virtual Joystick
+        -- Android Virtual Joystick Support
         if UIS.TouchEnabled then
-            -- Virtual joystick Roblox akan otomatis bekerja
-            -- Script akan membaca input dari virtual joystick
-            local touchConnection
-            touchConnection = UIS.TouchMoved:Connect(function(touch)
-                if FlyEnabled then
-                    -- Virtual joystick input processing
-                    -- Roblox akan menangani ini secara otomatis
-                end
-            end)
+            print("[ROWNN] Mobile Mode: Use Virtual Joystick to fly")
         end
         
-        print("[ROWNN] FLY SYSTEM: ENABLED - Bisa terbang dengan cepat!")
-        print("[ROWNN] Controls: WASD untuk arah, Space/Shift untuk naik/turun")
-        print("[ROWNN] Mobile: Gunakan Virtual Joystick")
+        print("[ROWNN] FLY: ENABLED - Bisa terbang cepat!")
         
     else
-        -- Disable FLY
-        if FlyConnection then 
-            FlyConnection:Disconnect() 
-            FlyConnection = nil
-        end
+        -- MATIKAN FLY
+        if FlyConnection then FlyConnection:Disconnect() end
         
-        -- Restore character state
+        -- Hapus physics objects
         if Player.Character then
-            local Humanoid = Player.Character:FindFirstChild("Humanoid")
-            if Humanoid then
-                Humanoid.PlatformStand = false
-                Humanoid:ChangeState(Enum.HumanoidStateType.Running)
-            end
-            
-            -- Hapus physics objects
             for _, child in pairs(Player.Character:GetChildren()) do
                 if child:IsA("BodyVelocity") or child:IsA("BodyGyro") then
                     child:Destroy()
@@ -295,21 +188,38 @@ FeatureButtons["FLY"].MouseButton1Click:Connect(function()
             end
         end
         
-        -- Restore gravity
-        workspace.Gravity = 196.2
-        
-        print("[ROWNN] FLY SYSTEM: DISABLED")
+        print("[ROWNN] FLY: DISABLED")
     end
 end)
 
--- ========== NO CLIP SYSTEM ==========
-FeatureButtons["NO CLIP"].MouseButton1Click:Connect(function()
+-- SPEED CONTROL
+local SpeedBox = Instance.new("TextBox")
+SpeedBox.Text = "50"
+SpeedBox.Size = UDim2.new(0.9, 0, 0, 25)
+SpeedBox.Position = UDim2.new(0.05, 0, 0.12, 0)
+SpeedBox.BackgroundColor3 = Color3.fromRGB(0, 60, 0)
+SpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedBox.PlaceholderText = "Fly Speed"
+SpeedBox.Font = Enum.Font.SciFi
+SpeedBox.TextSize = 12
+SpeedBox.Parent = ScrollFrame
+
+SpeedBox.FocusLost:Connect(function()
+    local speed = tonumber(SpeedBox.Text)
+    if speed and speed > 0 and speed <= 200 then
+        FlySpeed = speed
+    else
+        SpeedBox.Text = FlySpeed
+    end
+end)
+
+-- ========== NO CLIP ==========
+local NoclipBtn = CreateButton("🔓 NO CLIP: OFF", 0.2, function()
     NoclipEnabled = not NoclipEnabled
-    FeatureButtons["NO CLIP"].Text = NoclipEnabled and "🔓 NO CLIP: ON" or "🔓 NO CLIP: OFF"
-    FeatureButtons["NO CLIP"].TextColor3 = NoclipEnabled and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(255, 50, 50)
+    NoclipBtn.Text = NoclipEnabled and "🔓 NO CLIP: ON" or "🔓 NO CLIP: OFF"
     
     if NoclipEnabled then
-        NoclipConnection = RunService.Stepped:Connect(function()
+        local conn = RunService.Stepped:Connect(function()
             if Player.Character then
                 for _, part in pairs(Player.Character:GetDescendants()) do
                     if part:IsA("BasePart") then
@@ -318,364 +228,255 @@ FeatureButtons["NO CLIP"].MouseButton1Click:Connect(function()
                 end
             end
         end)
-        print("[ROWNN] Noclip: ENABLED")
-    else
-        if NoclipConnection then NoclipConnection:Disconnect() end
-        if Player.Character then
-            for _, part in pairs(Player.Character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
+        
+        -- Simpan connection untuk di-disconnect nanti
+        NoclipBtn.MouseButton1Click = function()
+            NoclipEnabled = false
+            NoclipBtn.Text = "🔓 NO CLIP: OFF"
+            conn:Disconnect()
+            if Player.Character then
+                for _, part in pairs(Player.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = true
+                    end
                 end
             end
         end
-        print("[ROWNN] Noclip: DISABLED")
+        
+        print("[ROWNN] NO CLIP: ENABLED")
     end
 end)
 
 -- ========== INFINITY JUMP ==========
-FeatureButtons["INFINITY JUMP"].MouseButton1Click:Connect(function()
+local InfJumpBtn = CreateButton("🦘 INF JUMP: OFF", 0.3, function()
     InfJumpEnabled = not InfJumpEnabled
-    FeatureButtons["INFINITY JUMP"].Text = InfJumpEnabled and "🦘 INFINITY JUMP: ON" or "🦘 INFINITY JUMP: OFF"
-    FeatureButtons["INFINITY JUMP"].TextColor3 = InfJumpEnabled and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(255, 50, 50)
+    InfJumpBtn.Text = InfJumpEnabled and "🦘 INF JUMP: ON" or "🦘 INF JUMP: OFF"
     
     if InfJumpEnabled then
-        JumpConnection = UIS.JumpRequest:Connect(function()
+        local conn = UIS.JumpRequest:Connect(function()
             if Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
                 Player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
             end
         end)
-        print("[ROWNN] Infinity Jump: ENABLED")
-    else
-        if JumpConnection then JumpConnection:Disconnect() end
-        print("[ROWNN] Infinity Jump: DISABLED")
+        
+        InfJumpBtn.MouseButton1Click = function()
+            InfJumpEnabled = false
+            InfJumpBtn.Text = "🦘 INF JUMP: OFF"
+            conn:Disconnect()
+        end
+        
+        print("[ROWNN] INFINITY JUMP: ENABLED")
     end
 end)
 
--- ========== INVISIBLE MODE ==========
-FeatureButtons["INVISIBLE"].MouseButton1Click:Connect(function()
+-- ========== INVISIBLE ==========
+local InvisibleBtn = CreateButton("👻 INVISIBLE: OFF", 0.4, function()
     InvisibleEnabled = not InvisibleEnabled
-    FeatureButtons["INVISIBLE"].Text = InvisibleEnabled and "👻 INVISIBLE: ON" or "👻 INVISIBLE: OFF"
-    FeatureButtons["INVISIBLE"].TextColor3 = InvisibleEnabled and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(255, 50, 50)
+    InvisibleBtn.Text = InvisibleEnabled and "👻 INVISIBLE: ON" or "👻 INVISIBLE: OFF"
     
     if InvisibleEnabled then
         if Player.Character then
             for _, part in pairs(Player.Character:GetDescendants()) do
                 if part:IsA("BasePart") then
-                    OriginalTransparency[part] = part.Transparency
                     part.Transparency = 1
                 end
             end
         end
-        print("[ROWNN] Invisible Mode: ENABLED")
+        print("[ROWNN] INVISIBLE: ENABLED")
     else
         if Player.Character then
-            for part, transparency in pairs(OriginalTransparency) do
-                if part.Parent then
-                    part.Transparency = transparency
+            for _, part in pairs(Player.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.Transparency = 0
                 end
             end
-            OriginalTransparency = {}
         end
-        print("[ROWNN] Invisible Mode: DISABLED")
+        print("[ROWNN] INVISIBLE: DISABLED")
     end
 end)
 
--- ========== HITBOX EXPANDER ==========
-FeatureButtons["HITBOX"].MouseButton1Click:Connect(function()
+-- ========== HITBOX ==========
+local HitboxBtn = CreateButton("🎯 HITBOX: OFF", 0.5, function()
     HitboxEnabled = not HitboxEnabled
-    FeatureButtons["HITBOX"].Text = HitboxEnabled and "🎯 HITBOX: ON" or "🎯 HITBOX: OFF"
-    FeatureButtons["HITBOX"].TextColor3 = HitboxEnabled and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(255, 50, 50)
+    HitboxBtn.Text = HitboxEnabled and "🎯 HITBOX: ON" or "🎯 HITBOX: OFF"
     
     if HitboxEnabled then
         if Player.Character then
             for _, part in pairs(Player.Character:GetDescendants()) do
                 if part:IsA("BasePart") then
-                    part.Size = part.Size * 2
+                    part.Size = part.Size * 1.5
                 end
             end
         end
-        print("[ROWNN] Hitbox Expander: ENABLED")
+        print("[ROWNN] HITBOX: ENABLED")
     else
         if Player.Character then
             for _, part in pairs(Player.Character:GetDescendants()) do
                 if part:IsA("BasePart") then
-                    part.Size = part.Size / 2
+                    part.Size = part.Size / 1.5
                 end
             end
         end
-        print("[ROWNN] Hitbox Expander: DISABLED")
+        print("[ROWNN] HITBOX: DISABLED")
     end
 end)
 
--- ========== ESP (Player Highlight) ==========
-FeatureButtons["ESP"].MouseButton1Click:Connect(function()
+-- ========== ESP ==========
+local EspBtn = CreateButton("👁️ ESP: OFF", 0.6, function()
     EspEnabled = not EspEnabled
-    FeatureButtons["ESP"].Text = EspEnabled and "👁️ ESP: ON" or "👁️ ESP: OFF"
-    FeatureButtons["ESP"].TextColor3 = EspEnabled and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(255, 50, 50)
-    
-    local espBoxes = {}
+    EspBtn.Text = EspEnabled and "👁️ ESP: ON" or "👁️ ESP: OFF"
     
     if EspEnabled then
-        local function CreateESP(player)
-            if player == Player then return end
-            
-            local box = Instance.new("BoxHandleAdornment")
-            box.Name = "ESP_" .. player.Name
-            box.Adornee = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            box.AlwaysOnTop = true
-            box.ZIndex = 10
-            box.Size = Vector3.new(4, 6, 4)
-            box.Color3 = Color3.fromRGB(255, 0, 0)
-            box.Transparency = 0.5
-            box.Parent = player.Character and player.Character.HumanoidRootPart
-            
-            espBoxes[player] = box
-            
-            local nameTag = Instance.new("BillboardGui")
-            nameTag.Name = "ESP_Name"
-            nameTag.Adornee = player.Character and player.Character.HumanoidRootPart
-            nameTag.Size = UDim2.new(0, 200, 0, 50)
-            nameTag.StudsOffset = Vector3.new(0, 4, 0)
-            nameTag.AlwaysOnTop = true
-            nameTag.Parent = player.Character and player.Character.HumanoidRootPart
-            
-            local label = Instance.new("TextLabel", nameTag)
-            label.Text = player.Name
-            label.Size = UDim2.new(1, 0, 1, 0)
-            label.TextColor3 = Color3.fromRGB(255, 255, 255)
-            label.BackgroundTransparency = 1
-            label.Font = Enum.Font.GothamBold
-        end
-        
-        -- Create ESP for existing players
-        for _, player in pairs(Players:GetPlayers()) do
-            if player.Character then
-                CreateESP(player)
-            else
-                player.CharacterAdded:Connect(function()
-                    CreateESP(player)
-                end)
+        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+            if player ~= Player and player.Character then
+                local highlight = Instance.new("Highlight")
+                highlight.Name = "ESP_" .. player.Name
+                highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                highlight.Parent = player.Character
             end
         end
-        
-        -- Listen for new players
-        Players.PlayerAdded:Connect(function(player)
-            player.CharacterAdded:Connect(function()
-                CreateESP(player)
-            end)
-        end)
-        
         print("[ROWNN] ESP: ENABLED")
     else
-        -- Remove all ESP
-        for player, box in pairs(espBoxes) do
-            if box then box:Destroy() end
-        end
-        espBoxes = {}
-        
-        -- Remove name tags
-        for _, player in pairs(Players:GetPlayers()) do
-            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                local esp = player.Character.HumanoidRootPart:FindFirstChild("ESP_" .. player.Name)
-                local nameTag = player.Character.HumanoidRootPart:FindFirstChild("ESP_Name")
+        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+            if player.Character then
+                local esp = player.Character:FindFirstChild("ESP_" .. player.Name)
                 if esp then esp:Destroy() end
-                if nameTag then nameTag:Destroy() end
             end
         end
-        
         print("[ROWNN] ESP: DISABLED")
     end
 end)
 
 -- ========== SPEED HACK ==========
-FeatureButtons["SPEED HACK"].MouseButton1Click:Connect(function()
+local SpeedHackBtn = CreateButton("⚡ SPEED: OFF", 0.7, function()
     SpeedHackEnabled = not SpeedHackEnabled
-    FeatureButtons["SPEED HACK"].Text = SpeedHackEnabled and "⚡ SPEED HACK: ON" or "⚡ SPEED HACK: OFF"
-    FeatureButtons["SPEED HACK"].TextColor3 = SpeedHackEnabled and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(255, 50, 50)
+    SpeedHackBtn.Text = SpeedHackEnabled and "⚡ SPEED: ON" or "⚡ SPEED: OFF"
     
     if SpeedHackEnabled then
         if Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
-            OriginalWalkSpeed = Player.Character.Humanoid.WalkSpeed
-            OriginalJumpPower = Player.Character.Humanoid.JumpPower
-            
             Player.Character.Humanoid.WalkSpeed = 100
-            Player.Character.Humanoid.JumpPower = 100
         end
-        print("[ROWNN] Speed Hack: ENABLED (WalkSpeed: 100, JumpPower: 100)")
+        print("[ROWNN] SPEED HACK: ENABLED (100 walkspeed)")
     else
         if Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
-            Player.Character.Humanoid.WalkSpeed = OriginalWalkSpeed or 16
-            Player.Character.Humanoid.JumpPower = OriginalJumpPower or 50
+            Player.Character.Humanoid.WalkSpeed = 16
         end
-        print("[ROWNN] Speed Hack: DISABLED")
+        print("[ROWNN] SPEED HACK: DISABLED")
     end
 end)
 
 -- ========== BRING PARTS ==========
-FeatureButtons["BRING PARTS"].MouseButton1Click:Connect(function()
+local BringPartsBtn = CreateButton("🧲 BRING PARTS: OFF", 0.8, function()
     BringPartsEnabled = not BringPartsEnabled
-    FeatureButtons["BRING PARTS"].Text = BringPartsEnabled and "🧲 BRING PARTS: ON" or "🧲 BRING PARTS: OFF"
-    FeatureButtons["BRING PARTS"].TextColor3 = BringPartsEnabled and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(255, 50, 50)
+    BringPartsBtn.Text = BringPartsEnabled and "🧲 BRING PARTS: ON" or "🧲 BRING PARTS: OFF"
     
     if BringPartsEnabled then
         spawn(function()
-            local radius = 10
-            
             while BringPartsEnabled do
                 if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
                     local root = Player.Character.HumanoidRootPart
-                    local parts = Workspace:GetDescendants()
-                    local count = 0
+                    local parts = workspace:GetDescendants()
                     
                     for _, part in pairs(parts) do
                         if BringPartsEnabled and part:IsA("BasePart") and part ~= root then
-                            count = count + 1
-                            local angle = count * (360 / math.max(1, count))
-                            local offset = Vector3.new(
-                                math.cos(math.rad(angle)) * radius,
-                                0,
-                                math.sin(math.rad(angle)) * radius
-                            )
-                            
-                            local target = root.Position + offset
-                            part.Velocity = (target - part.Position).Unit * 80
+                            part.Velocity = (root.Position - part.Position).Unit * 50
                         end
                     end
                 end
                 wait(0.1)
             end
         end)
-        print("[ROWNN] Bring Parts: ENABLED")
+        print("[ROWNN] BRING PARTS: ENABLED")
     else
-        print("[ROWNN] Bring Parts: DISABLED")
+        print("[ROWNN] BRING PARTS: DISABLED")
     end
 end)
 
 -- ========== SPAM REMOTE ==========
-FeatureButtons["SPAM REMOTE"].MouseButton1Click:Connect(function()
+local SpamBtn = CreateButton("🔥 SPAM: OFF", 0.9, function()
     SpamRemoteEnabled = not SpamRemoteEnabled
-    FeatureButtons["SPAM REMOTE"].Text = SpamRemoteEnabled and "🔥 SPAM REMOTE: ON" or "🔥 SPAM REMOTE: OFF"
-    FeatureButtons["SPAM REMOTE"].TextColor3 = SpamRemoteEnabled and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(255, 50, 50)
+    SpamBtn.Text = SpamRemoteEnabled and "🔥 SPAM: ON" or "🔥 SPAM: OFF"
     
     if SpamRemoteEnabled then
         spawn(function()
-            -- Cari remote event
-            local remoteTarget = nil
+            -- Cari remote
+            local remote = nil
             for _, obj in pairs(game:GetDescendants()) do
                 if obj:IsA("RemoteEvent") then
-                    remoteTarget = obj
+                    remote = obj
                     break
                 end
             end
             
-            if remoteTarget then
+            if remote then
                 while SpamRemoteEnabled do
                     pcall(function()
-                        remoteTarget:FireServer()
+                        remote:FireServer()
                     end)
                     wait()
                 end
             else
-                print("[ROWNN] No RemoteEvent found to spam!")
                 SpamRemoteEnabled = false
-                FeatureButtons["SPAM REMOTE"].Text = "🔥 SPAM REMOTE: OFF"
+                SpamBtn.Text = "🔥 SPAM: OFF"
+                print("[ROWNN] No remote found!")
             end
         end)
-        print("[ROWNN] Spam Remote: ENABLED")
+        print("[ROWNN] SPAM REMOTE: ENABLED")
     else
-        print("[ROWNN] Spam Remote: DISABLED")
-    end
-end)
-
--- ========== SPEED CONTROLS ==========
-local SpeedControls = Instance.new("Frame")
-SpeedControls.Name = "SpeedControls"
-SpeedControls.Parent = TabsFrame
-SpeedControls.Size = UDim2.new(0.95, 0, 0, 60)
-SpeedControls.Position = UDim2.new(0.025, 0, 0.92, 0)
-SpeedControls.BackgroundTransparency = 1
-
-local SpeedLabel = Instance.new("TextLabel", SpeedControls)
-SpeedLabel.Text = "FLY SPEED: 50"
-SpeedLabel.Size = UDim2.new(0.6, 0, 0, 30)
-SpeedLabel.BackgroundTransparency = 1
-SpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-SpeedLabel.Font = Enum.Font.Gotham
-SpeedLabel.TextSize = 12
-
-local SpeedInput = Instance.new("TextBox", SpeedControls)
-SpeedInput.Text = "50"
-SpeedInput.Size = UDim2.new(0.35, 0, 0, 30)
-SpeedInput.Position = UDim2.new(0.65, 0, 0, 0)
-SpeedInput.BackgroundColor3 = Color3.fromRGB(0, 60, 0)
-SpeedInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-SpeedInput.PlaceholderText = "Speed"
-SpeedInput.Font = Enum.Font.Gotham
-
-SpeedInput.FocusLost:Connect(function()
-    local newSpeed = tonumber(SpeedInput.Text)
-    if newSpeed and newSpeed > 0 and newSpeed <= 200 then
-        FlySpeed = newSpeed
-        SpeedLabel.Text = "FLY SPEED: " .. newSpeed
-    else
-        SpeedInput.Text = FlySpeed
+        print("[ROWNN] SPAM REMOTE: DISABLED")
     end
 end)
 
 -- ========== MOBILE OPTIMIZATION ==========
 if UIS.TouchEnabled then
-    -- Make buttons bigger for touch
-    for _, btn in pairs(FeatureButtons) do
-        btn.Size = UDim2.new(0.96, 0, 0, 50)
+    -- Buat tombol lebih besar untuk touch
+    for _, btn in pairs(ScrollFrame:GetChildren()) do
+        if btn:IsA("TextButton") then
+            btn.Size = UDim2.new(0.92, 0, 0, 40)
+        end
     end
     
-    -- Add mobile instructions
-    local MobileInfo = Instance.new("TextLabel", TabsFrame)
-    MobileInfo.Text = "📱 Mobile Mode: Use Virtual Joystick"
-    MobileInfo.Size = UDim2.new(0.95, 0, 0, 30)
-    MobileInfo.Position = UDim2.new(0.025, 0, 0.98, 0)
-    MobileInfo.BackgroundTransparency = 1
-    MobileInfo.TextColor3 = Color3.fromRGB(0, 255, 100)
-    MobileInfo.Font = Enum.Font.Gotham
-    MobileInfo.TextSize = 12
+    -- Tambahkan info mobile
+    local MobileLabel = Instance.new("TextLabel")
+    MobileLabel.Text = "📱 Mobile: Use Virtual Joystick"
+    MobileLabel.Size = UDim2.new(0.9, 0, 0, 20)
+    MobileLabel.Position = UDim2.new(0.05, 0, 1.02, 0)
+    MobileLabel.BackgroundTransparency = 1
+    MobileLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+    MobileLabel.Font = Enum.Font.SciFi
+    MobileLabel.TextSize = 10
+    MobileLabel.Parent = ScrollFrame
 end
 
--- ========== AUTO-CLEANUP ==========
-game:GetService("Players").PlayerRemoving:Connect(function(leavingPlayer)
-    if leavingPlayer == Player then
-        -- Cleanup everything
+-- ========== CLEANUP ==========
+game:GetService("Players").PlayerRemoving:Connect(function(p)
+    if p == Player then
         RownnGui:Destroy()
         if FlyConnection then FlyConnection:Disconnect() end
-        if NoclipConnection then NoclipConnection:Disconnect() end
-        if JumpConnection then JumpConnection:Disconnect() end
     end
 end)
 
--- ========== FINAL MESSAGE ==========
-wait(1)
+-- ========== SUCCESS MESSAGE ==========
 print("╔════════════════════════════════════════╗")
-print("║       ROWNN GUI LOADED SUCCESSFULLY   ║")
-print("║                                        ║")
-print("║  🚀 FLY SYSTEM UPGRADED:               ║")
-print("║  • Bisa terbang dengan cepat          ║")
-print("║  • Full movement control              ║")
-print("║  • Android Virtual Joystick support   ║")
-print("║  • Smooth camera follow               ║")
-print("║                                        ║")
-print("║  Other Features:                      ║")
-print("║  • 🔓 Noclip Mode                     ║")
-print("║  • 🦘 Infinity Jump                   ║")
-print("║  • 👻 Invisible Mode                  ║")
-print("║  • 🎯 Hitbox Expander                 ║")
-print("║  • 👁️ ESP Player Highlight            ║")
-print("║  • ⚡ Speed Hack                       ║")
-print("║  • 🧲 Bring All Parts                 ║")
-print("║  • 🔥 Remote Spam                     ║")
+print("║         ROWNN GUI LOADED!             ║")
+print("║        GUI Size: Small (180x340)      ║")
+print("║        Features Working:              ║")
+print("║        • 🚀 FLY (REAL FLYING)         ║")
+print("║        • 🔓 NO CLIP                   ║")
+print("║        • 🦘 INFINITY JUMP             ║")
+print("║        • 👻 INVISIBLE                 ║")
+print("║        • 🎯 HITBOX                    ║")
+print("║        • 👁️ ESP                      ║")
+print("║        • ⚡ SPEED HACK                ║")
+print("║        • 🧲 BRING PARTS               ║")
+print("║        • 🔥 SPAM REMOTE               ║")
 print("╚════════════════════════════════════════╝")
 print("")
 print("🎮 CONTROLS:")
-print("- PC: WASD + Space/Shift")
-print("- Android: Virtual Joystick + Jump Button")
-print("- Speed: Atur di textbox (1-200)")
+print("- Drag GUI to move")
+print("- Click ROWNN to open/close")
+print("- Fly: WASD + Space/Shift")
+print("- Mobile: Virtual Joystick")
 print("")
-print("⚠️ NOTE: Semua fitur ON/OFF dengan 1 klik!")
+print("✅ ALL FEATURES HAVE ON/OFF TOGGLE!")
