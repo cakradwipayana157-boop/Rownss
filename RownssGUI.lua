@@ -1,482 +1,350 @@
--- ROWNN GUI - Fly Beneran Bisa Terbang Cepat
--- GUI Kecil, Bisa Drag, Android Optimized
+import sys
+import threading
+import time
+import random
+from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
+from PyQt5.QtWidgets import (
+    QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout,
+    QLabel, QFrame, QSlider, QCheckBox, QSystemTrayIcon, QMenu
+)
+from PyQt5.QtGui import QColor, QFont, QPainter, QPen, QFontDatabase
+import pyautogui
+import win32api
+import win32con
+import win32gui
+import win32process
+import psutil
+import ctypes
+import os
+import subprocess
+import yaml
+import sqlite3
+from Crypto.Cipher import AES
+import base64
+import logging
+from logging.handlers import RotatingFileHandler
 
-local Player = game:GetService("Players").LocalPlayer
-local RunService = game:GetService("RunService")
-local UIS = game:GetService("UserInputService")
+# Evasion Techniques
+def amsi_bypass():
+    try:
+        amsi = ctypes.windll.kernel32.LoadLibraryA(b"amsi.dll")
+        amsi_scan_buffer = ctypes.windll.kernel32.GetProcAddress(amsi, b"AmsiScanBuffer")
+        ctypes.windll.kernel32.VirtualProtect(ctypes.c_void_p(amsi_scan_buffer), 1, 0x40, ctypes.c_int(0))
+        ctypes.c_int(amsi_scan_buffer).value = 1
+        print("AMSIBypass: Success")
+    except Exception as e:
+        print(f"AMSIBypass: Failed {e}")
 
--- GUI KECIL YANG BISA DI-DRAG
-local RownnGui = Instance.new("ScreenGui")
-RownnGui.Name = "RownnGui"
-RownnGui.Parent = game:GetService("CoreGui")
+def etw_patch():
+    try:
+        kernel32 = ctypes.windll.kernel32
+        hProcess = kernel32.GetCurrentProcess()
+        hThread = kernel32.GetCurrentThread()
+        dwflg = 0x1000
+        kernel32.SetThreadContext(hThread, ctypes.byref(ctypes.c_ulong(0x40010001)))
+        kernel32.SetThreadInformation(hThread, 0x10, ctypes.byref(ctypes.c_ulong(0x40010001)), ctypes.sizeof(ctypes.c_ulong))
+        print("ETW Patch: Success")
+    except Exception as e:
+        print(f"ETW Patch: Failed {e}")
 
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Parent = RownnGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 30, 20)
-MainFrame.BorderColor3 = Color3.fromRGB(0, 255, 100)
-MainFrame.BorderSizePixel = 2
-MainFrame.Position = UDim2.new(0.05, 0, 0.05, 0) -- GUI kecil di pojok
-MainFrame.Size = UDim2.new(0, 180, 0, 40) -- UKURAN KECIL
-MainFrame.Active = true
-MainFrame.Draggable = true
+# Encryption
+def encrypt_data(data, key):
+    cipher = AES.new(key, AES.MODE_GCM)
+    ciphertext, tag = cipher.encrypt_and_digest(data.encode())
+    return base64.b64encode(cipher.nonce + tag + ciphertext).decode()
 
--- TITLE BAR KECIL
-local Title = Instance.new("TextButton")
-Title.Text = "ROWNN ▼"
-Title.Size = UDim2.new(1, 0, 1, 0)
-Title.BackgroundColor3 = Color3.fromRGB(0, 50, 0)
-Title.TextColor3 = Color3.fromRGB(255, 50, 50)
-Title.Font = Enum.Font.SciFi
-Title.TextSize = 14
-Title.Parent = MainFrame
+def decrypt_data(encrypted_data, key):
+    raw = base64.b64decode(encrypted_data)
+    nonce = raw[:16]
+    tag = raw[16:32]
+    ciphertext = raw[32:]
+    cipher = AES.new(key, AES.MODE_GCM, nonce)
+    return cipher.decrypt_and_verify(ciphertext, tag).decode()
 
--- CONTENT AREA
-local Content = Instance.new("Frame")
-Content.BackgroundColor3 = Color3.fromRGB(25, 35, 25)
-Content.Position = UDim2.new(0, 0, 0, 40)
-Content.Size = UDim2.new(1, 0, 0, 300)
-Content.Visible = false
-Content.Parent = MainFrame
+# Database
+def init_db():
+    conn = sqlite3.connect('rowngui.db', check_same_thread=False)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS config
+                 (id INTEGER PRIMARY KEY, key TEXT, value TEXT)''')
+    conn.commit()
+    return conn
 
--- TOGGLE GUI
-local GuiOpen = false
-Title.MouseButton1Click:Connect(function()
-    GuiOpen = not GuiOpen
-    Content.Visible = GuiOpen
-    MainFrame.Size = GuiOpen and UDim2.new(0, 180, 0, 340) or UDim2.new(0, 180, 0, 40)
-    Title.Text = GuiOpen and "ROWNN ▲" or "ROWNN ▼"
-end)
+# Logging
+def setup_logging():
+    log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    log_file = 'rowngui.log'
+    my_handler = RotatingFileHandler(log_file, mode='a', maxBytes=5*1024*1024, 
+                                    backupCount=2, encoding=None, delay=0)
+    my_handler.setFormatter(log_formatter)
+    my_handler.setLevel(logging.INFO)
+    logger = logging.getLogger('rowngui_logger')
+    logger.setLevel(logging.INFO)
+    logger.addHandler(my_handler)
+    return logger
 
--- SCROLLING FRAME UNTUK FITUR
-local ScrollFrame = Instance.new("ScrollingFrame")
-ScrollFrame.Size = UDim2.new(1, 0, 1, 0)
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 500)
-ScrollFrame.ScrollBarThickness = 3
-ScrollFrame.Parent = Content
+# GUI Class
+class RownnGui(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("RownnGui")
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setGeometry(100, 100, 800, 600)
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #202020;
+                color: #ffffff;
+                font-family: 'Segoe UI';
+                font-size: 14px;
+            }
+            QPushButton {
+                background-color: #333333;
+                border: 1px solid #555555;
+                padding: 10px;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #444444;
+            }
+            QLabel {
+                margin: 5px;
+            }
+            QSlider::groove:horizontal {
+                border: 1px solid #555555;
+                height: 8px;
+                background: #333333;
+                margin: 2px 0;
+            }
+            QSlider::handle:horizontal {
+                background: #555555;
+                border: 1px solid #777777;
+                width: 18px;
+                margin: -5px 0;
+                border-radius: 5px;
+            }
+        """)
+        self.initUI()
+        self.db_conn = init_db()
+        self.logger = setup_logging()
+        self.load_config()
+        self.start_evasion()
+        self.start_background_tasks()
 
--- ========== VARIABLES ==========
-local FlyEnabled = false
-local NoclipEnabled = false
-local InfJumpEnabled = false
-local InvisibleEnabled = false
-local HitboxEnabled = false
-local EspEnabled = false
-local SpeedHackEnabled = false
-local BringPartsEnabled = false
-local SpamRemoteEnabled = false
+    def initUI(self):
+        # Title Bar
+        title_bar = QWidget(self)
+        title_bar.setStyleSheet("background-color: #1e1e1e;")
+        title_layout = QHBoxLayout()
+        title_label = QLabel("RownnGui")
+        title_label.setStyleSheet("font-size: 18px; font-weight: bold;")
+        close_btn = QPushButton("✕")
+        close_btn.clicked.connect(self.close)
+        minimize_btn = QPushButton("−")
+        minimize_btn.clicked.connect(self.showMinimized)
+        title_layout.addWidget(title_label)
+        title_layout.addStretch()
+        title_layout.addWidget(minimize_btn)
+        title_layout.addWidget(close_btn)
+        title_bar.setLayout(title_layout)
+        title_bar.setGeometry(0, 0, self.width(), 30)
 
-local FlySpeed = 50
-local FlyConnection
+        # Main Layout
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(title_bar)
+        self.setLayout(main_layout)
 
--- ========== FLY SYSTEM YANG BENERAN BISA TERBANG CEPAT ==========
-local function CreateButton(name, yPos, callback)
-    local btn = Instance.new("TextButton")
-    btn.Text = name
-    btn.Size = UDim2.new(0.9, 0, 0, 35)
-    btn.Position = UDim2.new(0.05, 0, yPos, 0)
-    btn.BackgroundColor3 = Color3.fromRGB(0, 70, 0)
-    btn.TextColor3 = Color3.fromRGB(255, 50, 50)
-    btn.Font = Enum.Font.SciFi
-    btn.TextSize = 12
-    btn.Parent = ScrollFrame
-    btn.MouseButton1Click = callback
-    return btn
-end
+        # Features
+        self.create_features_section(main_layout)
 
--- FLY BUTTON
-local FlyBtn = CreateButton("🚀 FLY: OFF", 0.02, function()
-    FlyEnabled = not FlyEnabled
-    FlyBtn.Text = FlyEnabled and "🚀 FLY: ON" or "🚀 FLY: OFF"
-    
-    if FlyEnabled then
-        -- FLY YANG BENERAN BISA TERBANG CEPAT
-        if not Player.Character then return end
-        local HumanoidRootPart = Player.Character:WaitForChild("HumanoidRootPart")
-        local Humanoid = Player.Character:FindFirstChildOfClass("Humanoid")
-        
-        -- Simpan state awal
-        local originalGravity = workspace.Gravity
-        
-        -- Buat BodyVelocity untuk kontrol gerak
-        local BV = Instance.new("BodyVelocity")
-        BV.Velocity = Vector3.new(0, 0, 0)
-        BV.MaxForce = Vector3.new(10000, 10000, 10000)
-        BV.P = 1250
-        BV.Parent = HumanoidRootPart
-        
-        -- Buat BodyGyro untuk stabilisasi
-        local BG = Instance.new("BodyGyro")
-        BG.MaxTorque = Vector3.new(50000, 50000, 50000)
-        BG.P = 3000
-        BG.D = 500
-        BG.Parent = HumanoidRootPart
-        
-        -- Biarkan kamera normal (tidak di-scriptable)
-        workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
-        
-        FlyConnection = RunService.Heartbeat:Connect(function()
-            if not FlyEnabled or not Player.Character then 
-                if FlyConnection then FlyConnection:Disconnect() end
-                return 
-            end
-            
-            local camera = workspace.CurrentCamera
-            local look = camera.CFrame.LookVector
-            local right = camera.CFrame.RightVector
-            
-            local move = Vector3.new(0, 0, 0)
-            
-            -- Kontrol untuk PC (testing)
-            if UIS:IsKeyDown(Enum.KeyCode.W) then
-                move = move + (look * FlySpeed)
-            end
-            if UIS:IsKeyDown(Enum.KeyCode.S) then
-                move = move - (look * FlySpeed)
-            end
-            if UIS:IsKeyDown(Enum.KeyCode.A) then
-                move = move - (right * FlySpeed)
-            end
-            if UIS:IsKeyDown(Enum.KeyCode.D) then
-                move = move + (right * FlySpeed)
-            end
-            if UIS:IsKeyDown(Enum.KeyCode.Space) then
-                move = move + Vector3.new(0, FlySpeed, 0)
-            end
-            if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then
-                move = move - Vector3.new(0, FlySpeed, 0)
-            end
-            
-            -- Terapkan kecepatan
-            BV.Velocity = move
-            
-            -- Stabilisasi orientasi
-            BG.CFrame = camera.CFrame
-            
-            -- Noclip otomatis saat terbang
-            for _, part in pairs(Player.Character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
-                end
-            end
-        end)
-        
-        -- Android Virtual Joystick Support
-        if UIS.TouchEnabled then
-            print("[ROWNN] Mobile Mode: Use Virtual Joystick to fly")
-        end
-        
-        print("[ROWNN] FLY: ENABLED - Bisa terbang cepat!")
-        
-    else
-        -- MATIKAN FLY
-        if FlyConnection then FlyConnection:Disconnect() end
-        
-        -- Hapus physics objects
-        if Player.Character then
-            for _, child in pairs(Player.Character:GetChildren()) do
-                if child:IsA("BodyVelocity") or child:IsA("BodyGyro") then
-                    child:Destroy()
-                end
-            end
-            
-            -- Restore collision
-            for _, part in pairs(Player.Character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                end
-            end
-        end
-        
-        print("[ROWNN] FLY: DISABLED")
-    end
-end)
+    def create_features_section(self, layout):
+        features = QWidget()
+        features_layout = QVBoxLayout()
 
--- SPEED CONTROL
-local SpeedBox = Instance.new("TextBox")
-SpeedBox.Text = "50"
-SpeedBox.Size = UDim2.new(0.9, 0, 0, 25)
-SpeedBox.Position = UDim2.new(0.05, 0, 0.12, 0)
-SpeedBox.BackgroundColor3 = Color3.fromRGB(0, 60, 0)
-SpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-SpeedBox.PlaceholderText = "Fly Speed"
-SpeedBox.Font = Enum.Font.SciFi
-SpeedBox.TextSize = 12
-SpeedBox.Parent = ScrollFrame
+        # Fly
+        fly_group = QFrame()
+        fly_layout = QHBoxLayout()
+        fly_label = QLabel("Fly")
+        self.fly_checkbox = QCheckBox()
+        fly_layout.addWidget(fly_label)
+        fly_layout.addWidget(self.fly_checkbox)
+        fly_group.setLayout(fly_layout)
+        features_layout.addWidget(fly_group)
 
-SpeedBox.FocusLost:Connect(function()
-    local speed = tonumber(SpeedBox.Text)
-    if speed and speed > 0 and speed <= 200 then
-        FlySpeed = speed
-    else
-        SpeedBox.Text = FlySpeed
-    end
-end)
+        # InfJump
+        infjump_group = QFrame()
+        infjump_layout = QHBoxLayout()
+        infjump_label = QLabel("InfJump")
+        self.infjump_checkbox = QCheckBox()
+        infjump_layout.addWidget(infjump_label)
+        infjump_layout.addWidget(self.infjump_checkbox)
+        infjump_group.setLayout(infjump_layout)
+        features_layout.addWidget(infjump_group)
 
--- ========== NO CLIP ==========
-local NoclipBtn = CreateButton("🔓 NO CLIP: OFF", 0.2, function()
-    NoclipEnabled = not NoclipEnabled
-    NoclipBtn.Text = NoclipEnabled and "🔓 NO CLIP: ON" or "🔓 NO CLIP: OFF"
-    
-    if NoclipEnabled then
-        local conn = RunService.Stepped:Connect(function()
-            if Player.Character then
-                for _, part in pairs(Player.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
-                end
-            end
-        end)
-        
-        -- Simpan connection untuk di-disconnect nanti
-        NoclipBtn.MouseButton1Click = function()
-            NoclipEnabled = false
-            NoclipBtn.Text = "🔓 NO CLIP: OFF"
-            conn:Disconnect()
-            if Player.Character then
-                for _, part in pairs(Player.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = true
-                    end
-                end
-            end
-        end
-        
-        print("[ROWNN] NO CLIP: ENABLED")
-    end
-end)
+        # NoClip
+        noclip_group = QFrame()
+        noclip_layout = QHBoxLayout()
+        noclip_label = QLabel("NoClip")
+        self.noclip_checkbox = QCheckBox()
+        noclip_layout.addWidget(noclip_label)
+        noclip_layout.addWidget(self.noclip_checkbox)
+        noclip_group.setLayout(noclip_layout)
+        features_layout.addWidget(noclip_group)
 
--- ========== INFINITY JUMP ==========
-local InfJumpBtn = CreateButton("🦘 INF JUMP: OFF", 0.3, function()
-    InfJumpEnabled = not InfJumpEnabled
-    InfJumpBtn.Text = InfJumpEnabled and "🦘 INF JUMP: ON" or "🦘 INF JUMP: OFF"
-    
-    if InfJumpEnabled then
-        local conn = UIS.JumpRequest:Connect(function()
-            if Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
-                Player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-            end
-        end)
-        
-        InfJumpBtn.MouseButton1Click = function()
-            InfJumpEnabled = false
-            InfJumpBtn.Text = "🦘 INF JUMP: OFF"
-            conn:Disconnect()
-        end
-        
-        print("[ROWNN] INFINITY JUMP: ENABLED")
-    end
-end)
+        # ESP
+        esp_group = QFrame()
+        esp_layout = QHBoxLayout()
+        esp_label = QLabel("ESP")
+        self.esp_checkbox = QCheckBox()
+        esp_layout.addWidget(esp_label)
+        esp_layout.addWidget(self.esp_checkbox)
+        esp_group.setLayout(esp_layout)
+        features_layout.addWidget(esp_group)
 
--- ========== INVISIBLE ==========
-local InvisibleBtn = CreateButton("👻 INVISIBLE: OFF", 0.4, function()
-    InvisibleEnabled = not InvisibleEnabled
-    InvisibleBtn.Text = InvisibleEnabled and "👻 INVISIBLE: ON" or "👻 INVISIBLE: OFF"
-    
-    if InvisibleEnabled then
-        if Player.Character then
-            for _, part in pairs(Player.Character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.Transparency = 1
-                end
-            end
-        end
-        print("[ROWNN] INVISIBLE: ENABLED")
-    else
-        if Player.Character then
-            for _, part in pairs(Player.Character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.Transparency = 0
-                end
-            end
-        end
-        print("[ROWNN] INVISIBLE: DISABLED")
-    end
-end)
+        # Bring Part
+        bring_part_group = QFrame()
+        bring_part_layout = QHBoxLayout()
+        bring_part_label = QLabel("Bring Part")
+        self.bring_part_checkbox = QCheckBox()
+        bring_part_layout.addWidget(bring_part_label)
+        bring_part_layout.addWidget(self.bring_part_checkbox)
+        bring_part_group.setLayout(bring_part_layout)
+        features_layout.addWidget(bring_part_group)
 
--- ========== HITBOX ==========
-local HitboxBtn = CreateButton("🎯 HITBOX: OFF", 0.5, function()
-    HitboxEnabled = not HitboxEnabled
-    HitboxBtn.Text = HitboxEnabled and "🎯 HITBOX: ON" or "🎯 HITBOX: OFF"
-    
-    if HitboxEnabled then
-        if Player.Character then
-            for _, part in pairs(Player.Character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.Size = part.Size * 1.5
-                end
-            end
-        end
-        print("[ROWNN] HITBOX: ENABLED")
-    else
-        if Player.Character then
-            for _, part in pairs(Player.Character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.Size = part.Size / 1.5
-                end
-            end
-        end
-        print("[ROWNN] HITBOX: DISABLED")
-    end
-end)
+        # Fling Player
+        fling_player_group = QFrame()
+        fling_player_layout = QHBoxLayout()
+        fling_player_label = QLabel("Fling Player")
+        self.fling_player_checkbox = QCheckBox()
+        fling_player_layout.addWidget(fling_player_label)
+        fling_player_layout.addWidget(self.fling_player_checkbox)
+        fling_player_group.setLayout(fling_player_layout)
+        features_layout.addWidget(fling_player_group)
 
--- ========== ESP ==========
-local EspBtn = CreateButton("👁️ ESP: OFF", 0.6, function()
-    EspEnabled = not EspEnabled
-    EspBtn.Text = EspEnabled and "👁️ ESP: ON" or "👁️ ESP: OFF"
-    
-    if EspEnabled then
-        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-            if player ~= Player and player.Character then
-                local highlight = Instance.new("Highlight")
-                highlight.Name = "ESP_" .. player.Name
-                highlight.FillColor = Color3.fromRGB(255, 0, 0)
-                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-                highlight.Parent = player.Character
-            end
-        end
-        print("[ROWNN] ESP: ENABLED")
-    else
-        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-            if player.Character then
-                local esp = player.Character:FindFirstChild("ESP_" .. player.Name)
-                if esp then esp:Destroy() end
-            end
-        end
-        print("[ROWNN] ESP: DISABLED")
-    end
-end)
+        features.setLayout(features_layout)
+        layout.addWidget(features)
 
--- ========== SPEED HACK ==========
-local SpeedHackBtn = CreateButton("⚡ SPEED: OFF", 0.7, function()
-    SpeedHackEnabled = not SpeedHackEnabled
-    SpeedHackBtn.Text = SpeedHackEnabled and "⚡ SPEED: ON" or "⚡ SPEED: OFF"
-    
-    if SpeedHackEnabled then
-        if Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
-            Player.Character.Humanoid.WalkSpeed = 100
-        end
-        print("[ROWNN] SPEED HACK: ENABLED (100 walkspeed)")
-    else
-        if Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
-            Player.Character.Humanoid.WalkSpeed = 16
-        end
-        print("[ROWNN] SPEED HACK: DISABLED")
-    end
-end)
+    def start_evasion(self):
+        evasion_thread = threading.Thread(target=self.run_evasion, daemon=True)
+        evasion_thread.start()
 
--- ========== BRING PARTS ==========
-local BringPartsBtn = CreateButton("🧲 BRING PARTS: OFF", 0.8, function()
-    BringPartsEnabled = not BringPartsEnabled
-    BringPartsBtn.Text = BringPartsEnabled and "🧲 BRING PARTS: ON" or "🧲 BRING PARTS: OFF"
-    
-    if BringPartsEnabled then
-        spawn(function()
-            while BringPartsEnabled do
-                if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
-                    local root = Player.Character.HumanoidRootPart
-                    local parts = workspace:GetDescendants()
-                    
-                    for _, part in pairs(parts) do
-                        if BringPartsEnabled and part:IsA("BasePart") and part ~= root then
-                            part.Velocity = (root.Position - part.Position).Unit * 50
-                        end
-                    end
-                end
-                wait(0.1)
-            end
-        end)
-        print("[ROWNN] BRING PARTS: ENABLED")
-    else
-        print("[ROWNN] BRING PARTS: DISABLED")
-    end
-end)
+    def run_evasion(self):
+        while True:
+            amsi_bypass()
+            etw_patch()
+            time.sleep(5)
 
--- ========== SPAM REMOTE ==========
-local SpamBtn = CreateButton("🔥 SPAM: OFF", 0.9, function()
-    SpamRemoteEnabled = not SpamRemoteEnabled
-    SpamBtn.Text = SpamRemoteEnabled and "🔥 SPAM: ON" or "🔥 SPAM: OFF"
-    
-    if SpamRemoteEnabled then
-        spawn(function()
-            -- Cari remote
-            local remote = nil
-            for _, obj in pairs(game:GetDescendants()) do
-                if obj:IsA("RemoteEvent") then
-                    remote = obj
-                    break
-                end
-            end
-            
-            if remote then
-                while SpamRemoteEnabled do
-                    pcall(function()
-                        remote:FireServer()
-                    end)
-                    wait()
-                end
-            else
-                SpamRemoteEnabled = false
-                SpamBtn.Text = "🔥 SPAM: OFF"
-                print("[ROWNN] No remote found!")
-            end
-        end)
-        print("[ROWNN] SPAM REMOTE: ENABLED")
-    else
-        print("[ROWNN] SPAM REMOTE: DISABLED")
-    end
-end)
+    def start_background_tasks(self):
+        tasks = [
+            self.background_fly,
+            self.background_infjump,
+            self.background_noclip,
+            self.background_esp,
+            self.background_bring_part,
+            self.background_fling_player
+        ]
+        for task in tasks:
+            t = threading.Thread(target=task, daemon=True)
+            t.start()
 
--- ========== MOBILE OPTIMIZATION ==========
-if UIS.TouchEnabled then
-    -- Buat tombol lebih besar untuk touch
-    for _, btn in pairs(ScrollFrame:GetChildren()) do
-        if btn:IsA("TextButton") then
-            btn.Size = UDim2.new(0.92, 0, 0, 40)
-        end
-    end
-    
-    -- Tambahkan info mobile
-    local MobileLabel = Instance.new("TextLabel")
-    MobileLabel.Text = "📱 Mobile: Use Virtual Joystick"
-    MobileLabel.Size = UDim2.new(0.9, 0, 0, 20)
-    MobileLabel.Position = UDim2.new(0.05, 0, 1.02, 0)
-    MobileLabel.BackgroundTransparency = 1
-    MobileLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
-    MobileLabel.Font = Enum.Font.SciFi
-    MobileLabel.TextSize = 10
-    MobileLabel.Parent = ScrollFrame
-end
+    def background_fly(self):
+        while True:
+            if self.fly_checkbox.isChecked():
+                self.fly()
+            time.sleep(0.1)
 
--- ========== CLEANUP ==========
-game:GetService("Players").PlayerRemoving:Connect(function(p)
-    if p == Player then
-        RownnGui:Destroy()
-        if FlyConnection then FlyConnection:Disconnect() end
-    end
-end)
+    def fly(self):
+        pyautogui.keyDown('space')
+        time.sleep(0.1)
+        pyautogui.keyUp('space')
+        time.sleep(0.1)
 
--- ========== SUCCESS MESSAGE ==========
-print("╔════════════════════════════════════════╗")
-print("║         ROWNN GUI LOADED!             ║")
-print("║        GUI Size: Small (180x340)      ║")
-print("║        Features Working:              ║")
-print("║        • 🚀 FLY (REAL FLYING)         ║")
-print("║        • 🔓 NO CLIP                   ║")
-print("║        • 🦘 INFINITY JUMP             ║")
-print("║        • 👻 INVISIBLE                 ║")
-print("║        • 🎯 HITBOX                    ║")
-print("║        • 👁️ ESP                      ║")
-print("║        • ⚡ SPEED HACK                ║")
-print("║        • 🧲 BRING PARTS               ║")
-print("║        • 🔥 SPAM REMOTE               ║")
-print("╚════════════════════════════════════════╝")
-print("")
-print("🎮 CONTROLS:")
-print("- Drag GUI to move")
-print("- Click ROWNN to open/close")
-print("- Fly: WASD + Space/Shift")
-print("- Mobile: Virtual Joystick")
-print("")
-print("✅ ALL FEATURES HAVE ON/OFF TOGGLE!")
+    def background_infjump(self):
+        while True:
+            if self.infjump_checkbox.isChecked():
+                self.infjump()
+            time.sleep(0.1)
+
+    def infjump(self):
+        pyautogui.keyDown('space')
+        time.sleep(0.1)
+        pyautogui.keyUp('space')
+        time.sleep(0.1)
+
+    def background_noclip(self):
+        while True:
+            if self.noclip_checkbox.isChecked():
+                self.noclip()
+            time.sleep(0.1)
+
+    def noclip(self):
+        pyautogui.keyDown('c')
+        time.sleep(0.1)
+        pyautogui.keyUp('c')
+        time.sleep(0.1)
+
+    def background_esp(self):
+        while True:
+            if self.esp_checkbox.isChecked():
+                self.esp()
+            time.sleep(0.1)
+
+    def esp(self):
+        # Simulate ESP by drawing boxes (requires overlay window)
+        pass
+
+    def background_bring_part(self):
+        while True:
+            if self.bring_part_checkbox.isChecked():
+                self.bring_part()
+            time.sleep(0.1)
+
+    def bring_part(self):
+        pyautogui.hotkey('ctrl', 'b')
+        time.sleep(0.1)
+
+    def background_fling_player(self):
+        while True:
+            if self.fling_player_checkbox.isChecked():
+                self.fling_player()
+            time.sleep(0.1)
+
+    def fling_player(self):
+        pyautogui.hotkey('ctrl', 'f')
+        time.sleep(0.1)
+
+    def load_config(self):
+        try:
+            with open('config.yaml', 'r') as f:
+                config = yaml.safe_load(f)
+                self.fly_checkbox.setChecked(config.get('fly', False))
+                self.infjump_checkbox.setChecked(config.get('infjump', False))
+                self.noclip_checkbox.setChecked(config.get('noclip', False))
+                self.esp_checkbox.setChecked(config.get('esp', False))
+                self.bring_part_checkbox.setChecked(config.get('bring_part', False))
+                self.fling_player_checkbox.setChecked(config.get('fling_player', False))
+        except:
+            pass
+
+    def save_config(self):
+        config = {
+            'fly': self.fly_checkbox.isChecked(),
+            'infjump': self.infjump_checkbox.isChecked(),
+            'noclip': self.noclip_checkbox.isChecked(),
+            'esp': self.esp_checkbox.isChecked(),
+            'bring_part': self.bring_part_checkbox.isChecked(),
+            'fling_player': self.fling_player_checkbox.isChecked()
+        }
+        with open('config.yaml', 'w') as f:
+            yaml.safe_dump(config, f)
+
+    def closeEvent(self, event):
+        self.save_config()
+        event.accept()
+
+if __name__ == '__main__':
+    amsi_bypass()
+    etw_patch()
+    app = QApplication(sys.argv)
+    gui = RownnGui()
+    gui.show()
+    sys.exit(app.exec_())
